@@ -1,20 +1,21 @@
 #pragma once
 #include <vector>
-#include "AmanAircraft.h"
-#include "AmanTimeline.h"
 
 #define AIRCRAFT_DATA		(WM_APP + 101) 
+
+class AmanController;
+class AmanTimeline;
 
 class AmanWindow
 {
 	
 public:
-	AmanWindow();
+	AmanWindow(AmanController* controller);
 	~AmanWindow();
 
-	void render(std::vector<AmanTimeline> timelines);
+	void render(std::vector<AmanTimeline>* timelines);
 private:	
-	std::vector<AmanTimeline> timelines;
+	std::vector<AmanTimeline>* timelines;
 	DWORD threadId;
 
 	static LRESULT CALLBACK DLLWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);

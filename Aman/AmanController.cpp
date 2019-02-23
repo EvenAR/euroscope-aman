@@ -1,20 +1,30 @@
 #include "stdafx.h"
 #include "AmanController.h"
-#include "AmanPlugIn.h"
-#include "AmanTimeline.h"
+#include "AmanWindow.h"
 
 AmanController::AmanController(AmanPlugIn* plugin) {
 	this->amanPlugin = plugin;
+	this->amanWindow = NULL;
 }
 
 void AmanController::openWindow() {
-	this->amanWindow = new AmanWindow();
+	if (this->amanWindow == NULL) {
+		this->amanWindow = new AmanWindow(this);
+	}
+	else {
+
+	}
 }
 
-void AmanController::timelinesUpdated(std::vector<AmanTimeline> aircraftList) {
-	if (this->amanWindow) {
-		this->amanWindow->render(aircraftList);
+void AmanController::timelinesUpdated(std::vector<AmanTimeline>* timelines) {
+	if (this->amanWindow != NULL) {
+		this->amanWindow->render(timelines);
 	}
+}
+
+void AmanController::windowClosed() {
+	delete this->amanWindow;
+	this->amanWindow = NULL;
 }
 
 AmanController::~AmanController()

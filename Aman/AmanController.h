@@ -1,19 +1,25 @@
 #pragma once
-#include "AmanWindow.h"
 
+#include <vector>
+
+class AmanWindow;
 class AmanPlugIn;
 class AmanTimeline;
 
 class AmanController
 {
+	
 private:
 	AmanPlugIn* amanPlugin;	// Model
 	AmanWindow* amanWindow;	// View
 
+	
+
 public:
 	AmanController(AmanPlugIn* plugin);
 	void openWindow();
-	void timelinesUpdated(std::vector<AmanTimeline> aircraftList);
+	void windowClosed();
+	void timelinesUpdated(std::vector<AmanTimeline>* timelines);
 
 	~AmanController();
 };

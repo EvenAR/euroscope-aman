@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "AmanTimeline.h"
+#include "AmanAircraft.h"
 
 #include <ctime>
 #include <sstream>
@@ -12,6 +13,8 @@ AmanTimeline::AmanTimeline(std::string fix, int seconds, int resolution) {
 
 	this->fixes[0] = fix;
 	this->fixes[1] = "";
+
+	this->aircraftLists = new std::vector<AmanAircraft>[2];
 };
 
 AmanTimeline::AmanTimeline(std::string fixLeft, std::string fixRight, int seconds, int resolution) {
@@ -21,6 +24,8 @@ AmanTimeline::AmanTimeline(std::string fixLeft, std::string fixRight, int second
 
 	this->fixes[0] = fixLeft;
 	this->fixes[1] = fixRight;
+
+	this->aircraftLists = new std::vector<AmanAircraft>[2];
 };
 
 void AmanTimeline::render(RECT clinetRect, HDC memdc, int column) {

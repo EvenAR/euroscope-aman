@@ -1,9 +1,7 @@
 #pragma once
 #include <vector>
-#include "AmanAircraft.h"
 #include <Windows.h>
 
-#define AMAN_BRUSH_BACKGROUND			CreateSolidBrush(RGB(48, 48, 48))
 #define AMAN_BRUSH_TIMELINE_AHEAD		CreateSolidBrush(RGB(115, 115, 115))
 #define AMAN_BRUSH_TIMELINE_PAST		CreateSolidBrush(RGB(72, 72, 72))
 #define AMAN_TIME_TEXT_COLOR			RGB(255, 255, 255)
@@ -16,6 +14,8 @@
 #define AMAN_TIMELINE_TIME_POS			40
 #define AMAN_TIMELINE_REALTIME_OFFSET	50
 #define AMAN_WIDTH						350
+
+class AmanAircraft;
 
 class AmanTimeline
 {
@@ -31,6 +31,6 @@ public:
 
 	bool dual;
 	std::string fixes[2];
-	std::vector<AmanAircraft> aircraftLists[2];
+	std::vector<AmanAircraft>* aircraftLists;
 };
 

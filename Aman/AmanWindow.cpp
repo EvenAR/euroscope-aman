@@ -1,21 +1,32 @@
 #include "stdafx.h"
-#include "AmanWindow.h"
+
 #include "AmanPlugIn.h"
+#include "AmanController.h"
+#include "AmanTimeline.h"
+#include "AmanWindow.h"
+
+#define AMAN_BRUSH_BACKGROUND			CreateSolidBrush(RGB(48, 48, 48))
+
 #include <ctime>
 #include <sstream>
 #include <iomanip>
 
+AmanController* gpController;
 std::vector<AmanTimeline>* gpTimelines = NULL;
 HANDLE renderMutex;
+bool closing = true;
 
-AmanWindow::AmanWindow() {
+AmanWindow::AmanWindow(AmanController* controller) {
+	gpController = controller;
+	closing = false;
 	CreateThread(0, NULL, AmanWindow::ThreadProc, (LPVOID)(&this->timelines), NULL, &threadId);
+	
 	renderMutex = CreateMutex(NULL, FALSE, NULL);
 }
 
-void AmanWindow::render(std::vector<AmanTimeline> timelines) {
+void AmanWindow::render(std::vector<AmanTimeline>* timelines) {
 	this->timelines = timelines;
-	gpTimelines = &this->timelines;
+	gpTimelines = this->timelines;
 
 	WaitForSingleObject(renderMutex, INFINITE);
 	bool result = PostThreadMessage(threadId, AIRCRAFT_DATA, NULL, NULL);
@@ -45,17 +56,17 @@ DWORD WINAPI AmanWindow::ThreadProc(LPVOID lpParam)
 
 	if (!RegisterClassEx(&wc))
 		return 0;
-
+	
 	///////////
 	MSG msg;
 	prnt_hWnd = FindWindow("Window Injected Into ClassName", "Window Injected Into Caption");
-	hwnd = CreateWindowEx(0, (LPCSTR)L"InjectedDLLWindowClass", "AMAN", WS_EX_PALETTEWINDOW | WS_EX_TOPMOST, CW_USEDEFAULT, CW_USEDEFAULT, 400, 300, prnt_hWnd, NULL, inj_hModule, NULL);
+	hwnd = CreateWindowEx(WS_EX_TOPMOST, (LPCSTR)L"InjectedDLLWindowClass", "AMAN", WS_EX_PALETTEWINDOW | WS_EX_TOPMOST, CW_USEDEFAULT, CW_USEDEFAULT, 400, 300, prnt_hWnd, NULL, inj_hModule, NULL);
 	SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_THICKFRAME);
 	
 	ShowWindow(hwnd, SW_SHOWNORMAL);
 
 	BOOL bRet;
-	while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0) {
+	while (!closing && (bRet = GetMessage(&msg, NULL, 0, 0)) != 0) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 
@@ -64,6 +75,7 @@ DWORD WINAPI AmanWindow::ThreadProc(LPVOID lpParam)
 			RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE);
 		}
 	}
+	UnregisterClass((LPCSTR)L"InjectedDLLWindowClass", inj_hModule);
 	return 1;
 }
 //Our new windows proc
@@ -75,6 +87,7 @@ LRESULT CALLBACK AmanWindow::DLLWindowProc(HWND hwnd, UINT message, WPARAM wPara
 		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
+		gpController->windowClosed();
 		break;
 	case WM_SIZING:
 		InvalidateRect(hwnd, NULL, FALSE);
@@ -87,6 +100,8 @@ LRESULT CALLBACK AmanWindow::DLLWindowProc(HWND hwnd, UINT message, WPARAM wPara
 	case WM_PAINT:
 		AmanWindow::DrawStuff(hwnd);
 		break;
+	case WM_CLOSE:
+		DestroyWindow(hwnd);
 	default:
 		return DefWindowProc(hwnd, message, wParam, lParam);
 	}
@@ -133,4 +148,10 @@ void AmanWindow::DrawStuff(HWND hwnd) {
 	EndPaint(hwnd, &ps);
 
 	ReleaseMutex(renderMutex);
+}
+
+AmanWindow::~AmanWindow() {
+	ReleaseMutex(renderMutex);
+	bool ok = TerminateThread(&threadId, 0);
+	closing = true;
 }

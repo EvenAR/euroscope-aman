@@ -4,14 +4,19 @@
 #include "stdafx.h"
 #include "windows.h"
 #include "AmanWindow.h"
+#include "AmanController.h"
+#include "AmanTimeline.h"
+#include "AmanAircraft.h"
 
 #include <iterator>
 #include <sstream>
 #include <algorithm>
 #include <string>
+#include <vector>
 
 AmanPlugIn* pMyPlugIn;
 AmanController* amanController;
+std::vector<AmanTimeline> timelines;
 
 AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE,
 	"Arrival Manager",
@@ -19,12 +24,7 @@ AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE,
 	"Even Rognlien",
 	"Open source")
 {
-	amanController = new AmanController(pMyPlugIn);
-	amanController->openWindow();
-
-	timelines.push_back(AmanTimeline("ENGM", 60*60, 1));
-	timelines.push_back(AmanTimeline("TITLA", "ENGM", 60*60, 1));
-	amanController->timelinesUpdated(timelines);
+	
 }
 
 AmanPlugIn::~AmanPlugIn()
@@ -85,64 +85,71 @@ void AmanPlugIn::OnTimer(int Counter) {
 			timelines.at(i).aircraftLists[1] = getFixInboundList(timelines.at(i).fixes[1].c_str());
 		}
 	}
-	amanController->timelinesUpdated(timelines);
+	amanController->timelinesUpdated(&timelines);
 }
 
 bool AmanPlugIn::OnCompileCommand(const char * sCommandLine) {
-	bool commandExecuted = false;
+	bool cmdHandled = false;
 	std::istringstream iss(sCommandLine);
 	std::vector<std::string> results((std::istream_iterator<std::string>(iss)), std::istream_iterator<std::string>());
 
-	if (results.size() >= 3 && results.at(0) == ".aman") {
+	if (results.size() >= 2 && results.at(0) == ".aman") {
 		std::string command = results.at(1).c_str();
-		std::string id = results.at(2);
-		std::transform(id.begin(), id.end(), id.begin(), ::toupper);
 
-		// Add a new timeline
-		if (command == "add") {
-			int length = 60;
-			int interval = 1;
-
-			if (results.size() >= 4) {
-				length = std::stoi(results.at(3));
-				if (results.size() >= 5) {
-					interval = std::stoi(results.at(4));
-				}
-			}
-
-			if (id.find('/') != std::string::npos) {
-				std::string id1 = id.substr(0, id.find('/'));
-				std::string id2 = id.substr(id1.length() + 1);
-				timelines.push_back(AmanTimeline(id2, id1, length * 60, interval));
-			}
-			else {
-				timelines.push_back(AmanTimeline(id, length * 60, interval));
-			}
-			
-			commandExecuted = true;
+		if (command == "show") {
+			amanController->openWindow();
+			cmdHandled = true;
 		}
-		// Remove a timeline
-		if (command == "del") {
-			for (int i = 0; i < timelines.size(); i++) {
-				if (timelines.at(i).dual && id.find('/') != std::string::npos) {
-					std::string id1 = id.substr(0, id.find('/'));
-					std::string id2 = id.substr(id1.length() + 1);
+		else if (results.size() >= 3) {
+			std::string id = results.at(2);
+			std::transform(id.begin(), id.end(), id.begin(), ::toupper);
 
-					if (timelines.at(i).fixes[0] == id2 && timelines.at(i).fixes[1] == id1) {
-						timelines.erase(timelines.begin() + i);
-						commandExecuted = true;
+			// Add a new timeline
+			if (command == "add") {
+				int length = 60;
+				int interval = 1;
+
+				if (results.size() >= 4) {
+					length = std::stoi(results.at(3));
+					if (results.size() >= 5) {
+						interval = std::stoi(results.at(4));
 					}
 				}
-				else if (id == timelines.at(i).fixes[0]) {
-					timelines.erase(timelines.begin() + i);
-					commandExecuted = true;
+
+				if (id.find('/') != std::string::npos) {
+					std::string id1 = id.substr(0, id.find('/'));
+					std::string id2 = id.substr(id1.length() + 1);
+					timelines.push_back(AmanTimeline(id2, id1, length * 60, interval));
+				}
+				else {
+					timelines.push_back(AmanTimeline(id, length * 60, interval));
+				}
+
+				cmdHandled = true;
+			}
+			// Remove a timeline
+			if (command == "del") {
+				for (int i = 0; i < timelines.size(); i++) {
+					if (timelines.at(i).dual && id.find('/') != std::string::npos) {
+						std::string id1 = id.substr(0, id.find('/'));
+						std::string id2 = id.substr(id1.length() + 1);
+
+						if (timelines.at(i).fixes[0] == id2 && timelines.at(i).fixes[1] == id1) {
+							timelines.erase(timelines.begin() + i);
+							cmdHandled = true;
+						}
+					}
+					else if (id == timelines.at(i).fixes[0]) {
+						timelines.erase(timelines.begin() + i);
+						cmdHandled = true;
+					}
 				}
 			}
 		}
 	}
 
-	amanController->timelinesUpdated(timelines);
-	return commandExecuted;
+	amanController->timelinesUpdated(&timelines);
+	return cmdHandled;
 }
 
 int AmanPlugIn::getFixIndexByName(CRadarTarget radarTarget, const char* fixName) {
@@ -175,6 +182,10 @@ void __declspec (dllexport) EuroScopePlugInInit(EuroScopePlugIn::CPlugIn ** ppPl
 {
 	// allocate
 	*ppPlugInInstance = pMyPlugIn = new AmanPlugIn;
+
+	amanController = new AmanController(pMyPlugIn);
+	amanController->openWindow();
+	amanController->timelinesUpdated(&timelines);
 }
 
 void __declspec (dllexport) EuroScopePlugInExit(void)
