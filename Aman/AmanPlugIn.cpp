@@ -24,7 +24,7 @@ AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE,
 	"Even Rognlien",
 	"Open source")
 {
-	
+
 }
 
 AmanPlugIn::~AmanPlugIn()
@@ -149,7 +149,6 @@ bool AmanPlugIn::OnCompileCommand(const char * sCommandLine) {
 			}
 		}
 	}
-
 	amanController->timelinesUpdated(&timelines);
 	return cmdHandled;
 }

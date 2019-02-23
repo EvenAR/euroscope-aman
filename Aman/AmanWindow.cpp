@@ -3,32 +3,29 @@
 #include "AmanPlugIn.h"
 #include "AmanController.h"
 #include "AmanTimeline.h"
-#include "AmanWindow.h"
-
-#define AMAN_BRUSH_BACKGROUND			CreateSolidBrush(RGB(48, 48, 48))
+#include "AmanWindow.h"		
 
 #include <ctime>
 #include <sstream>
 #include <iomanip>
+#include <mutex>
 
 AmanController* gpController;
-std::vector<AmanTimeline>* gpTimelines = NULL;
-HANDLE renderMutex;
+std::vector<AmanTimeline> gpTimelines;
 bool closing = true;
+
+std::mutex timelineMutex;
 
 AmanWindow::AmanWindow(AmanController* controller) {
 	gpController = controller;
 	closing = false;
-	CreateThread(0, NULL, AmanWindow::ThreadProc, (LPVOID)(&this->timelines), NULL, &threadId);
-	
-	renderMutex = CreateMutex(NULL, FALSE, NULL);
+	CreateThread(0, NULL, AmanWindow::ThreadProc, NULL, NULL, &threadId);
 }
 
 void AmanWindow::render(std::vector<AmanTimeline>* timelines) {
-	this->timelines = timelines;
-	gpTimelines = this->timelines;
-
-	WaitForSingleObject(renderMutex, INFINITE);
+	timelineMutex.lock();
+	gpTimelines = *timelines;
+	timelineMutex.unlock();
 	bool result = PostThreadMessage(threadId, AIRCRAFT_DATA, NULL, NULL);
 }
 
@@ -52,7 +49,7 @@ DWORD WINAPI AmanWindow::ThreadProc(LPVOID lpParam)
 	wc.lpszMenuName = NULL;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
-	wc.hbrBackground = AMAN_BRUSH_BACKGROUND;
+	wc.hbrBackground = CreateSolidBrush(RGB(48, 48, 48));
 
 	if (!RegisterClassEx(&wc))
 		return 0;
@@ -110,6 +107,8 @@ LRESULT CALLBACK AmanWindow::DLLWindowProc(HWND hwnd, UINT message, WPARAM wPara
 }
 
 void AmanWindow::DrawStuff(HWND hwnd) {	
+	
+
 	RECT clinetRect;
 	int winWidth, winHeight;
 
@@ -130,31 +129,27 @@ void AmanWindow::DrawStuff(HWND hwnd) {
 	// Draw tools
 	FillRect(memdc, &clinetRect, AMAN_BRUSH_MAIN_BACKGROUND);
 
-	if (gpTimelines) {
-		int column = 0;
-		for (int i = 0; i < gpTimelines->size(); i++) {
-			if (gpTimelines->at(i).dual) {
-				column++;
-			}
-			gpTimelines->at(i).render(clinetRect, memdc, column);
+	int column = 0;
+	timelineMutex.lock();
+	for (int i = 0; i < gpTimelines.size(); i++) {
+		if (gpTimelines.at(i).dual) {
 			column++;
 		}
+		gpTimelines.at(i).render(clinetRect, memdc, column);
+		column++;
 	}
+	timelineMutex.unlock();
 	
 	BitBlt(hDC, 0, 0, winWidth, winHeight, memdc, 0, 0, SRCCOPY);
 	DeleteObject(hBmp);
 	DeleteDC(memdc);
 	DeleteDC(hDC);
-	EndPaint(hwnd, &ps);
-
-	ReleaseMutex(renderMutex);
+	EndPaint(hwnd, &ps);	
 }
-
 
 AmanWindow::~AmanWindow() {
 	closing = true;
 	bool result = PostThreadMessage(threadId, WM_CLOSE, NULL, NULL);
 	WaitForSingleObject(&threadId, INFINITE);
 	bool ok = TerminateThread(&threadId, 0);
-	ReleaseMutex(renderMutex);
 }

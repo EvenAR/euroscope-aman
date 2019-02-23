@@ -15,7 +15,6 @@ public:
 
 	void render(std::vector<AmanTimeline>* timelines);
 private:	
-	std::vector<AmanTimeline>* timelines;
 	DWORD threadId;
 
 	static LRESULT CALLBACK DLLWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
