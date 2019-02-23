@@ -5,6 +5,7 @@ public:
 	const char* callsign;
 	const char* arrivalRunway;
 	const char* icaoType;
+	bool trackedByMe;
 	int eta;
 	double distLeft;
 };

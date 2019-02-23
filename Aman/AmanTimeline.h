@@ -4,11 +4,16 @@
 
 #define AMAN_BRUSH_TIMELINE_AHEAD		CreateSolidBrush(RGB(115, 115, 115))
 #define AMAN_BRUSH_TIMELINE_PAST		CreateSolidBrush(RGB(72, 72, 72))
+#define AMAN_WHITE_PEN					CreatePen(PS_SOLID, 1, RGB(255, 255, 255))
+
 #define AMAN_TIME_TEXT_COLOR			RGB(255, 255, 255)
-#define AMAN_WHITE_PEN						CreatePen(PS_SOLID, 1, RGB(255, 255, 255))
+#define AMAN_TRACKED_BY_ME_COLOR		RGB(255, 255, 255)			
+#define AMAN_NOT_TRACKED_BY_ME_COLOR	RGB(120, 120, 120)			
+#define AMAN_FIX_COLOR					RGB(0, 0, 0)			
 
 #define AMAN_TIME_FONT					CreateFont(14, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 3, 2, 1, 49, "Courier New")
 #define AMAN_LABEL_FONT					CreateFont(16, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 3, 2, 1, 49, "Courier New")
+#define AMAN_FIX_FONT					CreateFont(18, 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 3, 2, 1, 49, "Courier New")
 
 #define AMAN_TIMELINE_WIDTH				60
 #define AMAN_TIMELINE_TIME_POS			40
