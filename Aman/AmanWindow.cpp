@@ -101,6 +101,7 @@ LRESULT CALLBACK AmanWindow::DLLWindowProc(HWND hwnd, UINT message, WPARAM wPara
 		AmanWindow::DrawStuff(hwnd);
 		break;
 	case WM_CLOSE:
+		closing = true;
 		DestroyWindow(hwnd);
 	default:
 		return DefWindowProc(hwnd, message, wParam, lParam);
@@ -149,8 +150,11 @@ void AmanWindow::DrawStuff(HWND hwnd) {
 	ReleaseMutex(renderMutex);
 }
 
+
 AmanWindow::~AmanWindow() {
-	ReleaseMutex(renderMutex);
-	bool ok = TerminateThread(&threadId, 0);
 	closing = true;
+	bool result = PostThreadMessage(threadId, WM_CLOSE, NULL, NULL);
+	WaitForSingleObject(&threadId, INFINITE);
+	bool ok = TerminateThread(&threadId, 0);
+	ReleaseMutex(renderMutex);
 }

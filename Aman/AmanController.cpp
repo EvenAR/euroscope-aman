@@ -27,6 +27,8 @@ void AmanController::windowClosed() {
 	this->amanWindow = NULL;
 }
 
-AmanController::~AmanController()
-{
+AmanController::~AmanController() {
+	if (this->amanWindow != NULL) {
+		delete this->amanWindow;
+	}
 }

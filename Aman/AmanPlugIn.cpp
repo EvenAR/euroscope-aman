@@ -192,5 +192,6 @@ void __declspec (dllexport) EuroScopePlugInInit(EuroScopePlugIn::CPlugIn ** ppPl
 
 void __declspec (dllexport) EuroScopePlugInExit(void)
 {
+	delete amanController;
 	delete pMyPlugIn;
 }
