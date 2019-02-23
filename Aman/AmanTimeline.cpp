@@ -30,22 +30,9 @@ AmanTimeline::AmanTimeline(std::string fixLeft, std::string fixRight, int second
 };
 
 void AmanTimeline::render(RECT clinetRect, HDC hdc, int column) {
-	// Timeline bar
 	long int now = static_cast<long int> (std::time(nullptr));			// Current UNIX-timestamp in seconds
 	int left = column * AMAN_WIDTH;
 	int separatorSpace = this->resolution * 60;							// Number of seconds between each bar on the timeline
-	RECT futureRect = { left, 0, left + AMAN_TIMELINE_WIDTH, clinetRect.bottom };
-	FillRect(hdc, &futureRect, AMAN_BRUSH_TIMELINE_AHEAD);
-	RECT pastRect = { left, clinetRect.bottom - AMAN_TIMELINE_REALTIME_OFFSET, left + AMAN_TIMELINE_WIDTH, clinetRect.bottom };
-	FillRect(hdc, &pastRect, AMAN_BRUSH_TIMELINE_PAST);
-
-	// Vertical white line(s)
-	MoveToEx(hdc, left + AMAN_TIMELINE_WIDTH, clinetRect.bottom, NULL);
-	LineTo(hdc, left + AMAN_TIMELINE_WIDTH, clinetRect.top);
-	if (dual) {
-		MoveToEx(hdc, left, clinetRect.bottom, NULL);
-		LineTo(hdc, left, clinetRect.top);
-	}
 
 	// Window size-dependent calculations
 	int top = clinetRect.top;											// Top of timeline (future) in pixels
@@ -53,13 +40,28 @@ void AmanTimeline::render(RECT clinetRect, HDC hdc, int column) {
 
 	double pixelsPerSec = (float)(bottom - top) / (float)this->seconds;
 	int secToNextMin = separatorSpace - (now % separatorSpace);
-	
-	SelectObject(hdc, AMAN_TIME_FONT);
-	SetBkMode(hdc, TRANSPARENT);
 
-	// Render the bars and times
-	SelectObject(hdc, AMAN_WHITE_PEN);
-	COLORREF oldColor = SetTextColor(hdc, AMAN_TIME_TEXT_COLOR);
+	FillRect(hdc, &clinetRect, AMAN_BRUSH_MAIN_BACKGROUND);
+
+	// Timeline bar
+	RECT futureRect = { left, 0, left + AMAN_TIMELINE_WIDTH, clinetRect.bottom };
+	FillRect(hdc, &futureRect, AMAN_BRUSH_TIMELINE_AHEAD);
+	RECT pastRect = { left, clinetRect.bottom - AMAN_TIMELINE_REALTIME_OFFSET, left + AMAN_TIMELINE_WIDTH, clinetRect.bottom };
+	FillRect(hdc, &pastRect, AMAN_BRUSH_TIMELINE_PAST);
+	
+	// Vertical white line(s)
+	HPEN oldPen = (HPEN)SelectObject(hdc, AMAN_VERTICAL_LINE_PEN);
+	MoveToEx(hdc, left + AMAN_TIMELINE_WIDTH, clinetRect.bottom, NULL);
+	LineTo(hdc, left + AMAN_TIMELINE_WIDTH, clinetRect.top);
+	if (dual) {
+		MoveToEx(hdc, left, clinetRect.bottom, NULL);
+		LineTo(hdc, left, clinetRect.top);
+	}
+
+	// Render the horizontal bars + times
+	HFONT oldFont = (HFONT)SelectObject(hdc, AMAN_TIME_FONT);
+	COLORREF oldColor = SetTextColor(hdc, AMAN_COLOR_TIME_TEXT);
+	int oldBackground = SetBkMode(hdc, TRANSPARENT);
 	for (int sec = secToNextMin; sec < this->seconds; sec += separatorSpace) {
 		int linePos = bottom - sec * pixelsPerSec;
 		int lineTime = now + sec;
@@ -105,13 +107,20 @@ void AmanTimeline::render(RECT clinetRect, HDC hdc, int column) {
 	}
 	
 	// Draw the fix id
+	COLORREF oldBackgroundColor = SetBkColor(hdc, AMAN_COLOR_FIX_BACKGROUND);
 	SetBkMode(hdc, OPAQUE);
-	SetTextColor(hdc, AMAN_FIX_COLOR);
+	SetTextColor(hdc, AMAN_COLOR_FIX_TEXT);
 	SelectObject(hdc, AMAN_FIX_FONT);
 	RECT rect = { left - AMAN_TIMELINE_WIDTH, clinetRect.bottom - 20, left + 2*AMAN_TIMELINE_WIDTH, clinetRect.bottom };
 	std::string text = this->dual ? this->fixes[1] + "/" + this->fixes[0] : this->fixes[0];
 	DrawText(hdc, text.c_str(), text.length(), &rect, DT_CENTER);
+
+	// Restore settings
 	SetTextColor(hdc, oldColor);
+	SelectObject(hdc, oldFont);
+	SelectObject(hdc, oldPen);
+	SetBkMode(hdc, oldBackground);
+	SetBkColor(hdc, oldBackgroundColor);
 }
 
 void AmanTimeline::drawAircraftChain(HDC hdc, int xStart, int yStart, float pixelsPerSec, bool left, std::vector<AmanAircraft> aircraftList) {
@@ -142,10 +151,16 @@ void AmanTimeline::drawAircraftChain(HDC hdc, int xStart, int yStart, float pixe
 
 
 		if (aircraft.trackedByMe) {
-			oldTextColor = SetTextColor(hdc, AMAN_TRACKED_BY_ME_COLOR);
+			oldTextColor = SetTextColor(hdc, AMAN_COLOR_TRACKED_BY_ME);
+			SelectObject(hdc, AMAN_WHITE_PEN);
+			SetBkColor(hdc, AMAN_COLOR_TRACKED_BY_ME);
+			SelectObject(hdc, AMAN_TRACKED_BRUSH);
 		}
 		else {
-			oldTextColor = SetTextColor(hdc, AMAN_NOT_TRACKED_BY_ME_COLOR);
+			oldTextColor = SetTextColor(hdc, AMAN_COLOR_NOT_TRACKED_BY_ME);
+			SelectObject(hdc, AMAN_GRAY_PEN);
+			SetBkColor(hdc, AMAN_COLOR_NOT_TRACKED_BY_ME);
+			SelectObject(hdc, AMAN_UNTRACKED_BRUSH);
 		}
 
 		// Left side of timeline
@@ -161,7 +176,7 @@ void AmanTimeline::drawAircraftChain(HDC hdc, int xStart, int yStart, float pixe
 				rectBottom = rectBottom - diff;
 			}
 
-			Ellipse(hdc, xStart - AMAN_TIMELINE_DOT_RADIUS, acPos - AMAN_TIMELINE_DOT_RADIUS, xStart + AMAN_TIMELINE_DOT_RADIUS, acPos + AMAN_TIMELINE_DOT_RADIUS);
+			Ellipse(hdc, xStart - AMAN_DOT_RADIUS, acPos - AMAN_DOT_RADIUS, xStart + AMAN_DOT_RADIUS, acPos + AMAN_DOT_RADIUS);
 			rect = { rectLeft, rectTop, rectRight, rectBottom };
 
 			MoveToEx(hdc, xStart, acPos, NULL);
@@ -182,7 +197,7 @@ void AmanTimeline::drawAircraftChain(HDC hdc, int xStart, int yStart, float pixe
 				rectBottom = rectBottom - diff;
 			}
 
-			Ellipse(hdc, xStart + AMAN_TIMELINE_WIDTH - AMAN_TIMELINE_DOT_RADIUS, acPos - AMAN_TIMELINE_DOT_RADIUS, xStart + AMAN_TIMELINE_WIDTH + AMAN_TIMELINE_DOT_RADIUS, acPos + AMAN_TIMELINE_DOT_RADIUS);
+			Ellipse(hdc, xStart + AMAN_TIMELINE_WIDTH - AMAN_DOT_RADIUS, acPos - AMAN_DOT_RADIUS, xStart + AMAN_TIMELINE_WIDTH + AMAN_DOT_RADIUS, acPos + AMAN_DOT_RADIUS);
 			rect = { rectLeft, rectTop, rectRight, rectBottom };
 
 			MoveToEx(hdc, xStart + AMAN_TIMELINE_WIDTH, acPos, NULL);
