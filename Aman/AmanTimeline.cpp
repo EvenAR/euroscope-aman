@@ -5,6 +5,7 @@
 #include <ctime>
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 
 AmanTimeline::AmanTimeline(std::string fix, int seconds, int resolution) {
 	this->dual = false;
@@ -38,6 +39,14 @@ void AmanTimeline::render(RECT clinetRect, HDC hdc, int column) {
 	RECT pastRect = { left, clinetRect.bottom - AMAN_TIMELINE_REALTIME_OFFSET, left + AMAN_TIMELINE_WIDTH, clinetRect.bottom };
 	FillRect(hdc, &pastRect, AMAN_BRUSH_TIMELINE_PAST);
 
+	// Vertical white line(s)
+	MoveToEx(hdc, left + AMAN_TIMELINE_WIDTH, clinetRect.bottom, NULL);
+	LineTo(hdc, left + AMAN_TIMELINE_WIDTH, clinetRect.top);
+	if (dual) {
+		MoveToEx(hdc, left, clinetRect.bottom, NULL);
+		LineTo(hdc, left, clinetRect.top);
+	}
+
 	// Window size-dependent calculations
 	int top = clinetRect.top;											// Top of timeline (future) in pixels
 	int bottom = clinetRect.bottom - AMAN_TIMELINE_REALTIME_OFFSET;		// Bottom of timeline (now) in pixels
@@ -56,7 +65,6 @@ void AmanTimeline::render(RECT clinetRect, HDC hdc, int column) {
 		int lineTime = now + sec;
 		int hours = (lineTime / 60 / 60) % 24;
 		int minutes = (lineTime / 60) % 60;
-
 
 		bool showTime = false;
 		std::stringstream timeStr;
@@ -87,7 +95,6 @@ void AmanTimeline::render(RECT clinetRect, HDC hdc, int column) {
 			RECT rect = { left, linePos - 6, left + AMAN_TIMELINE_WIDTH, linePos + 6 };
 			DrawText(hdc, timeStr.str().c_str(), strlen(timeStr.str().c_str()), &rect, DT_CENTER);
 		}
-
 	}
 
 	// Draw aircraft
@@ -108,6 +115,12 @@ void AmanTimeline::render(RECT clinetRect, HDC hdc, int column) {
 }
 
 void AmanTimeline::drawAircraftChain(HDC hdc, int xStart, int yStart, float pixelsPerSec, bool left, std::vector<AmanAircraft> aircraftList) {
+	std::sort(aircraftList.begin(), aircraftList.end());
+
+	int prevTop = -1;
+	int offset = 0;
+
+
 	for (int ac = 0; ac < aircraftList.size(); ac++) {
 		AmanAircraft aircraft = aircraftList.at(ac);
 		int acPos = yStart - aircraft.eta * pixelsPerSec;
@@ -137,13 +150,45 @@ void AmanTimeline::drawAircraftChain(HDC hdc, int xStart, int yStart, float pixe
 
 		// Left side of timeline
 		if (left) {
-			Ellipse(hdc, xStart - 3, acPos - 3, xStart + 3, acPos + 3);
-			rect = { xStart - AMAN_WIDTH, acPos - 10, xStart - 15, acPos + 10 };
+			int rectLeft = xStart - AMAN_WIDTH;
+			int rectTop = acPos - AMAN_AIRCRAFT_LINE_HEIGHT / 2;
+			int rectRight = xStart - AMAN_LABEL_SEP_FROM_TIMELINE;
+			int rectBottom = acPos + AMAN_AIRCRAFT_LINE_HEIGHT / 2;
+
+			if (prevTop >= 0 && rectBottom > prevTop) {
+				int diff = rectBottom - prevTop;
+				rectTop = rectTop - diff;
+				rectBottom = rectBottom - diff;
+			}
+
+			Ellipse(hdc, xStart - AMAN_TIMELINE_DOT_RADIUS, acPos - AMAN_TIMELINE_DOT_RADIUS, xStart + AMAN_TIMELINE_DOT_RADIUS, acPos + AMAN_TIMELINE_DOT_RADIUS);
+			rect = { rectLeft, rectTop, rectRight, rectBottom };
+
+			MoveToEx(hdc, xStart, acPos, NULL);
+			LineTo(hdc, rect.right, rect.top + AMAN_AIRCRAFT_LINE_HEIGHT / 2);
+
+			prevTop = rectTop;
 		}
 		// Right side of timeline
 		else {
-			Ellipse(hdc, xStart + AMAN_TIMELINE_WIDTH - 3, acPos - 3, xStart + AMAN_TIMELINE_WIDTH + 3, acPos + 3);
-			rect = { xStart + AMAN_TIMELINE_WIDTH + 15, acPos - 10, xStart + AMAN_TIMELINE_WIDTH + 15 + AMAN_WIDTH, acPos + 10 };
+			int rectLeft = xStart + AMAN_TIMELINE_WIDTH + AMAN_LABEL_SEP_FROM_TIMELINE;
+			int rectTop = acPos - AMAN_AIRCRAFT_LINE_HEIGHT / 2 + offset;
+			int rectRight = xStart + AMAN_TIMELINE_WIDTH + AMAN_LABEL_SEP_FROM_TIMELINE + AMAN_WIDTH;
+			int rectBottom = acPos + AMAN_AIRCRAFT_LINE_HEIGHT / 2 + offset;
+
+			if (prevTop >= 0 && rectBottom > prevTop) {
+				int diff = rectBottom - prevTop;
+				rectTop = rectTop - diff;
+				rectBottom = rectBottom - diff;
+			}
+
+			Ellipse(hdc, xStart + AMAN_TIMELINE_WIDTH - AMAN_TIMELINE_DOT_RADIUS, acPos - AMAN_TIMELINE_DOT_RADIUS, xStart + AMAN_TIMELINE_WIDTH + AMAN_TIMELINE_DOT_RADIUS, acPos + AMAN_TIMELINE_DOT_RADIUS);
+			rect = { rectLeft, rectTop, rectRight, rectBottom };
+
+			MoveToEx(hdc, xStart + AMAN_TIMELINE_WIDTH, acPos, NULL);
+			LineTo(hdc, rect.left - 5, rect.top + AMAN_AIRCRAFT_LINE_HEIGHT / 2);
+
+			prevTop = rectTop;
 		}
 		DrawText(hdc, acStr.str().c_str(), strlen(acStr.str().c_str()), &rect, left ? DT_RIGHT : DT_LEFT);
 		SetTextColor(hdc, oldTextColor);

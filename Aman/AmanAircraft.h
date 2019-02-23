@@ -8,4 +8,8 @@ public:
 	bool trackedByMe;
 	int eta;
 	double distLeft;
+
+	bool operator< (const AmanAircraft &other) const {
+		return eta < other.eta;
+	}
 };

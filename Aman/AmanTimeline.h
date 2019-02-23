@@ -20,6 +20,11 @@
 #define AMAN_TIMELINE_REALTIME_OFFSET	50
 #define AMAN_WIDTH						350
 
+#define AMAN_AIRCRAFT_LINE_HEIGHT		16
+
+#define AMAN_LABEL_SEP_FROM_TIMELINE	20
+#define AMAN_DOT_RADIUS					3
+
 class AmanAircraft;
 
 class AmanTimeline
