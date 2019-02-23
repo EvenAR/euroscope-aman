@@ -5,5 +5,9 @@ Aman/euroscope_sector_providers.txt
 Aman/SectorFileProviderDescriptor.txt
 Aman/ipaddr.txt
 Debug/
-Release/
 enc_temp_folder/
+*.exp
+*.pdb
+*.lib
+*.ipdb
+*.iobj
