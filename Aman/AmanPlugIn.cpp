@@ -70,6 +70,7 @@ std::vector<AmanAircraft> AmanPlugIn::getFixInboundList(const char* fixName) {
 					rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetArrivalRwy(),
 					rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetAircraftFPType(),
 					rt.GetCorrelatedFlightPlan().GetTrackingControllerIsMe(),
+					rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetAircraftType(),
 					timeToFix,
 					distToFix
 					});

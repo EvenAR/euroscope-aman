@@ -127,8 +127,7 @@ void AmanWindow::DrawStuff(HWND hwnd) {
 	long int now = static_cast<long int> (t);
 
 	// Draw tools
-	HPEN whitePen = CreatePen(PS_SOLID, 1, RGB(255, 255, 255));
-	SelectObject(memdc, whitePen);
+	FillRect(memdc, &clinetRect, AMAN_BRUSH_MAIN_BACKGROUND);
 
 	if (gpTimelines) {
 		int column = 0;
