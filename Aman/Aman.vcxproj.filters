@@ -73,6 +73,9 @@
     <ClInclude Include="AmanTimeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Aman.rc">

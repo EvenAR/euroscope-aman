@@ -4,6 +4,7 @@
 #include "AmanController.h"
 #include "AmanTimeline.h"
 #include "AmanWindow.h"		
+#include "Constants.h"
 
 #include <ctime>
 #include <sstream>

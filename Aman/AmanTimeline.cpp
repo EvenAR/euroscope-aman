@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "AmanTimeline.h"
 #include "AmanAircraft.h"
+#include "Constants.h"
 
 #include <ctime>
 #include <sstream>
@@ -65,7 +66,7 @@ void AmanTimeline::render(RECT clinetRect, HDC hdc, int column) {
 		int lineTime = now + sec;
 		int hours = (lineTime / 60 / 60) % 24;
 		int minutes = (lineTime / 60) % 60;
-
+		
 		bool showTime = false;
 		std::stringstream timeStr;
 		if (minutes % 10 == 0) {
