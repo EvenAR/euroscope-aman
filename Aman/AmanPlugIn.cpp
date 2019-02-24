@@ -36,9 +36,10 @@ std::vector<AmanAircraft> AmanPlugIn::getFixInboundList(const char* fixName) {
 	std::vector<AmanAircraft> aircraftList;
 	for (rt = pMyPlugIn->RadarTargetSelectFirst(); rt.IsValid(); rt = pMyPlugIn->RadarTargetSelectNext(rt)) {
 		int fixId = getFixIndexByName(rt, fixName);
+		bool passed = rt.GetCorrelatedFlightPlan().GetExtractedRoute().GetPointDistanceInMinutes(fixId) == -1;
 		bool fixIsDestination = fixId == rt.GetCorrelatedFlightPlan().GetExtractedRoute().GetPointsNumber() - 1;
 
-		if (fixId != -1) {
+		if (!passed && fixId != -1) {
 			CFlightPlanExtractedRoute route = rt.GetCorrelatedFlightPlan().GetExtractedRoute();
 			CFlightPlanPositionPredictions predictions = rt.GetCorrelatedFlightPlan().GetPositionPredictions();
 
@@ -69,6 +70,7 @@ std::vector<AmanAircraft> AmanPlugIn::getFixInboundList(const char* fixName) {
 					rt.GetCallsign(),
 					rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetArrivalRwy(),
 					rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetAircraftFPType(),
+					rt.GetCorrelatedFlightPlan().GetControllerAssignedData().GetDirectToPointName(),
 					rt.GetCorrelatedFlightPlan().GetTrackingControllerIsMe(),
 					rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetAircraftType(),
 					timeToFix,

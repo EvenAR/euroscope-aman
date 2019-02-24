@@ -135,6 +135,11 @@ void AmanTimeline::drawAircraftChain(HDC hdc, int xStart, int yStart, float pixe
 		COLORREF oldTextColor;
 		RECT rect;
 
+		const char* nextFix = "-----";
+		if (strlen(aircraft.nextFix) > 0) {
+			nextFix = aircraft.nextFix;
+		}
+
 		std::stringstream acStr;
 		acStr
 			<< std::left << std::setfill(' ') << std::setw(4)
@@ -146,7 +151,7 @@ void AmanTimeline::drawAircraftChain(HDC hdc, int xStart, int yStart, float pixe
 			<< std::left << std::setfill(' ') << std::setw(2)
 			<< aircraft.wtc
 			<< std::left << std::setfill(' ') << std::setw(7)
-			<< this->fixes[left ? 1 : 0].c_str()
+			<< nextFix
 			<< std::left << std::setfill(' ') << std::setw(5)
 			<< round(aircraft.distLeft)
 			<< std::left << std::setfill(' ') << std::setw(5)
