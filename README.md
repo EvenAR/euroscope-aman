@@ -1,7 +1,7 @@
 # Arrival manager for EuroScope 
 A simple arrival manager plugin for EuroScope. Uses the position predictions provided by EuroScope to visualize the arrival flow for a given airport or waypoint.
 
-## Commands
+## Usage
 * `.aman show` opens window if it's been closed.
 
 ### Add a timeline
@@ -11,5 +11,9 @@ A simple arrival manager plugin for EuroScope. Uses the position predictions pro
 
 ### Remove a timeline
 * `.aman del WAYPT1` or `.aman del WAYPT1/WAYPT2`
- 
-![alt text](https://i.gyazo.com/307103c8a24ecec491e2709dfdf86087.png)
+
+## Download
+The plugin .dll-file can be found in the Release folder. [Direct link](https://github.com/EvenAR/euroscope-aman/raw/master/Release/Aman.dll).
+
+
+![alt text](https://i.gyazo.com/745f64fb13bd81260fdcfb7ad67fb952.png)
