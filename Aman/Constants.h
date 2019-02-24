@@ -19,9 +19,9 @@ const HPEN AMAN_WHITE_PEN = CreatePen(PS_SOLID, 1, RGB(255, 255, 255));
 const HPEN AMAN_VERTICAL_LINE_PEN = CreatePen(PS_SOLID, 1, RGB(180, 180, 180));
 const HPEN AMAN_GRAY_PEN = CreatePen(PS_SOLID, 1, AMAN_COLOR_NOT_TRACKED_BY_ME);
 
-const HFONT AMAN_TIME_FONT = CreateFont(14, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 3, 2, 1, 49, "Courier New");
-const HFONT AMAN_LABEL_FONT = CreateFont(17, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 3, 2, 1, 49, "Courier New");
-const HFONT AMAN_FIX_FONT = CreateFont(18, 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 3, 2, 1, 49, "Courier New");
+const HFONT AMAN_TIME_FONT = CreateFont(14, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 3, 2, 1, 49, "EuroScope");
+const HFONT AMAN_LABEL_FONT = CreateFont(17, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 3, 2, 1, 49, "EuroScope");
+const HFONT AMAN_FIX_FONT = CreateFont(18, 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 3, 2, 1, 49, "EuroScope");
 
 const int AMAN_TIMELINE_WIDTH = 60;
 const int AMAN_TIMELINE_TIME_POS = 40;
