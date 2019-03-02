@@ -100,9 +100,9 @@ void AmanTimeline::render(RECT clinetRect, HDC hdc, int column) {
 
 	// Draw aircraft
 	SelectObject(hdc, AMAN_LABEL_FONT);
-	drawAircraftChain(hdc, left, bottom, pixelsPerSec, false, this->aircraftLists[0]);
+	drawAircraftChain(hdc, now, left, bottom, pixelsPerSec, false, this->aircraftLists[0]);
 	if (this->dual) {
-		drawAircraftChain(hdc, left, bottom, pixelsPerSec, true, this->aircraftLists[1]);
+		drawAircraftChain(hdc, now, left, bottom, pixelsPerSec, true, this->aircraftLists[1]);
 	}
 	
 	// Draw the fix id
@@ -122,7 +122,7 @@ void AmanTimeline::render(RECT clinetRect, HDC hdc, int column) {
 	SetBkColor(hdc, oldBackgroundColor);
 }
 
-void AmanTimeline::drawAircraftChain(HDC hdc, int xStart, int yStart, float pixelsPerSec, bool left, std::vector<AmanAircraft> aircraftList) {
+void AmanTimeline::drawAircraftChain(HDC hdc, int timeNow, int xStart, int yStart, float pixelsPerSec, bool left, std::vector<AmanAircraft> aircraftList) {
 	std::sort(aircraftList.begin(), aircraftList.end());
 
 	int prevTop = -1;
@@ -131,7 +131,7 @@ void AmanTimeline::drawAircraftChain(HDC hdc, int xStart, int yStart, float pixe
 
 	for (int ac = 0; ac < aircraftList.size(); ac++) {
 		AmanAircraft aircraft = aircraftList.at(ac);
-		int acPos = yStart - aircraft.eta * pixelsPerSec;
+		int acPos = yStart - (aircraft.eta - timeNow) * pixelsPerSec;
 		COLORREF oldTextColor;
 		RECT rect;
 
@@ -153,9 +153,7 @@ void AmanTimeline::drawAircraftChain(HDC hdc, int xStart, int yStart, float pixe
 			<< std::left << std::setfill(' ') << std::setw(7)
 			<< nextFix
 			<< std::left << std::setfill(' ') << std::setw(5)
-			<< round(aircraft.distLeft)
-			<< std::left << std::setfill(' ') << std::setw(5)
-			<< aircraft.eta;
+			<< round(aircraft.distLeft);
 
 
 		if (aircraft.trackedByMe) {

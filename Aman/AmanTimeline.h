@@ -9,7 +9,7 @@ private:
 	int seconds;
 	int resolution;
 
-	void drawAircraftChain(HDC hdc, int xStart, int yStart, float pixelsPerSec, bool left, std::vector<AmanAircraft> aircraftList);
+	void drawAircraftChain(HDC hdc, int timeNow, int xStart, int yStart, float pixelsPerSec, bool left, std::vector<AmanAircraft> aircraftList);
 public:
 	AmanTimeline(std::string fix, int seconds, int resolution);
 	AmanTimeline(std::string fixLeft, std::string fixRight, int seconds, int resolution);

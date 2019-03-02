@@ -13,10 +13,13 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <ctime>
+#include <unordered_map>
 
 AmanPlugIn* pMyPlugIn;
 AmanController* amanController;
 std::vector<AmanTimeline> timelines;
+std::unordered_map<const char*, AmanAircraft> allAircraft;
 
 AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE,
 	"Arrival Manager",
@@ -32,6 +35,8 @@ AmanPlugIn::~AmanPlugIn()
 }
 
 std::vector<AmanAircraft> AmanPlugIn::getFixInboundList(const char* fixName) {
+	long int timeNow = static_cast<long int> (std::time(nullptr));			// Current UNIX-timestamp in seconds
+
 	CRadarTarget rt;
 	std::vector<AmanAircraft> aircraftList;
 	for (rt = pMyPlugIn->RadarTargetSelectFirst(); rt.IsValid(); rt = pMyPlugIn->RadarTargetSelectNext(rt)) {
@@ -73,7 +78,7 @@ std::vector<AmanAircraft> AmanPlugIn::getFixInboundList(const char* fixName) {
 					rt.GetCorrelatedFlightPlan().GetControllerAssignedData().GetDirectToPointName(),
 					rt.GetCorrelatedFlightPlan().GetTrackingControllerIsMe(),
 					rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetAircraftWtc(),
-					timeToFix,
+					timeNow + timeToFix - rt.GetPosition().GetReceivedTime(),
 					distToFix
 					});
 			}
