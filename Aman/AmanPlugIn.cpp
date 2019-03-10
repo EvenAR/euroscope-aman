@@ -32,6 +32,7 @@ AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE,
 
 AmanPlugIn::~AmanPlugIn()
 {
+	delete amanController;
 }
 
 std::vector<AmanAircraft> AmanPlugIn::getFixInboundList(const char* fixName) {
@@ -198,6 +199,5 @@ void __declspec (dllexport) EuroScopePlugInInit(EuroScopePlugIn::CPlugIn ** ppPl
 
 void __declspec (dllexport) EuroScopePlugInExit(void)
 {
-	delete amanController;
 	delete pMyPlugIn;
 }

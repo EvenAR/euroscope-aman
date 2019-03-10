@@ -13,35 +13,31 @@
 
 AmanController* gpController;
 std::vector<AmanTimeline> gpTimelines;
-bool closing = true;
 
-std::mutex timelineMutex;
+std::mutex timelineDataMutex;
+HINSTANCE  hInstance;
 
 AmanWindow::AmanWindow(AmanController* controller) {
+	hInstance = GetModuleHandle(NULL);
 	gpController = controller;
-	closing = false;
-	CreateThread(0, NULL, AmanWindow::ThreadProc, NULL, NULL, &threadId);
+	CreateThread(0, NULL, AmanWindow::threadProc, NULL, NULL, &threadId);
 }
 
 void AmanWindow::render(std::vector<AmanTimeline>* timelines) {
-	timelineMutex.lock();
+	timelineDataMutex.lock();
 	gpTimelines = *timelines;
-	timelineMutex.unlock();
-	bool result = PostThreadMessage(threadId, AIRCRAFT_DATA, NULL, NULL);
+	timelineDataMutex.unlock();
+	PostThreadMessage(threadId, AIRCRAFT_DATA, NULL, NULL);
 }
 
-//The new thread
-DWORD WINAPI AmanWindow::ThreadProc(LPVOID lpParam)
+// Window thread procedure
+DWORD WINAPI AmanWindow::threadProc(LPVOID lpParam)
 {
-	HINSTANCE  inj_hModule = NULL;          //Injected Modules Handle
-	HWND       prnt_hWnd;            //Parent Window Handle
 	HWND	   hwnd;
-
-	// Register window class
 	WNDCLASSEX wc;
-	wc.hInstance = inj_hModule;
-	wc.lpszClassName = (LPCSTR)L"InjectedDLLWindowClass";
-	wc.lpfnWndProc = AmanWindow::DLLWindowProc;
+	wc.hInstance = hInstance;
+	wc.lpszClassName = AMAN_WINDOW_CLASS_NAME;
+	wc.lpfnWndProc = AmanWindow::windowProc;
 	wc.style = CS_DBLCLKS;
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
@@ -52,19 +48,37 @@ DWORD WINAPI AmanWindow::ThreadProc(LPVOID lpParam)
 	wc.cbWndExtra = 0;
 	wc.hbrBackground = CreateSolidBrush(RGB(48, 48, 48));
 
-	if (!RegisterClassEx(&wc))
-		return 0;
-	
-	///////////
-	MSG msg;
-	prnt_hWnd = FindWindow("Window Injected Into ClassName", "Window Injected Into Caption");
-	hwnd = CreateWindowEx(WS_EX_TOPMOST, (LPCSTR)L"InjectedDLLWindowClass", "AMAN", WS_EX_PALETTEWINDOW | WS_EX_TOPMOST, CW_USEDEFAULT, CW_USEDEFAULT, 400, 300, prnt_hWnd, NULL, inj_hModule, NULL);
-	SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_THICKFRAME);
+	if (!RegisterClassEx(&wc)) {
+		return false;
+	}
+
+	HWND prnt_hWnd = NULL;
+	hwnd = CreateWindowEx(
+		WS_EX_TOPMOST, 
+		AMAN_WINDOW_CLASS_NAME, 
+		AMAN_WINDOW_TITLE, 
+		WS_EX_PALETTEWINDOW | WS_EX_TOPMOST, 
+		CW_USEDEFAULT, 
+		CW_USEDEFAULT, 
+		600, 
+		900, 
+		prnt_hWnd,
+		NULL, 
+		hInstance, 
+		NULL
+	);
+
+	SetWindowLong(
+		hwnd, 
+		GWL_STYLE, 
+		GetWindowLong(hwnd, GWL_STYLE) | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_THICKFRAME
+	);
 	
 	ShowWindow(hwnd, SW_SHOWNORMAL);
 
+	MSG msg;
 	BOOL bRet;
-	while (!closing && (bRet = GetMessage(&msg, NULL, 0, 0)) != 0) {
+	while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 
@@ -72,42 +86,44 @@ DWORD WINAPI AmanWindow::ThreadProc(LPVOID lpParam)
 		case AIRCRAFT_DATA:
 			RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE);
 		}
-	}
-	UnregisterClass((LPCSTR)L"InjectedDLLWindowClass", inj_hModule);
-	return 1;
+	}	
+	return true;
 }
-//Our new windows proc
-LRESULT CALLBACK AmanWindow::DLLWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+
+// The window procedure
+LRESULT CALLBACK AmanWindow::windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	int res;
 	switch (message)
 	{
 	case WM_COMMAND:
 		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
-		gpController->windowClosed();
 		break;
 	case WM_SIZING:
 		InvalidateRect(hwnd, NULL, FALSE);
-		AmanWindow::DrawStuff(hwnd);
+		AmanWindow::drawContent(hwnd);
 		break;
 	case WM_SIZE:
 		InvalidateRect(hwnd, NULL, FALSE);
-		AmanWindow::DrawStuff(hwnd);
+		AmanWindow::drawContent(hwnd);
 		break;
 	case WM_PAINT:
-		AmanWindow::DrawStuff(hwnd);
+		AmanWindow::drawContent(hwnd);
 		break;
 	case WM_CLOSE:
-		closing = true;
-		DestroyWindow(hwnd);
+		res = DestroyWindow(hwnd);
+		res = UnregisterClass(AMAN_WINDOW_CLASS_NAME, hInstance);
+		gpController->windowClosed();
+		break;
 	default:
 		return DefWindowProc(hwnd, message, wParam, lParam);
 	}
 	return 0;
 }
 
-void AmanWindow::DrawStuff(HWND hwnd) {	
+void AmanWindow::drawContent(HWND hwnd) {	
 	
 
 	RECT clinetRect;
@@ -131,7 +147,7 @@ void AmanWindow::DrawStuff(HWND hwnd) {
 	FillRect(memdc, &clinetRect, AMAN_BRUSH_MAIN_BACKGROUND);
 
 	int column = 0;
-	timelineMutex.lock();
+	timelineDataMutex.lock();
 	for (int i = 0; i < gpTimelines.size(); i++) {
 		if (gpTimelines.at(i).dual) {
 			column++;
@@ -139,7 +155,7 @@ void AmanWindow::DrawStuff(HWND hwnd) {
 		gpTimelines.at(i).render(clinetRect, memdc, column);
 		column++;
 	}
-	timelineMutex.unlock();
+	timelineDataMutex.unlock();
 	
 	BitBlt(hDC, 0, 0, winWidth, winHeight, memdc, 0, 0, SRCCOPY);
 	DeleteObject(hBmp);
@@ -149,8 +165,9 @@ void AmanWindow::DrawStuff(HWND hwnd) {
 }
 
 AmanWindow::~AmanWindow() {
-	closing = true;
-	bool result = PostThreadMessage(threadId, WM_CLOSE, NULL, NULL);
-	WaitForSingleObject(&threadId, INFINITE);
-	bool ok = TerminateThread(&threadId, 0);
+	if (HWND hWnd = FindWindow(AMAN_WINDOW_CLASS_NAME, NULL)) {
+		SendMessage(hWnd, WM_CLOSE, 0, 0);
+		WaitForSingleObject(&threadId, INFINITE);
+		TerminateThread(&threadId, 0);
+	}
 }

@@ -23,12 +23,12 @@ void AmanController::timelinesUpdated(std::vector<AmanTimeline>* timelines) {
 }
 
 void AmanController::windowClosed() {
-	delete this->amanWindow;
 	this->amanWindow = NULL;
 }
 
 AmanController::~AmanController() {
 	if (this->amanWindow != NULL) {
 		delete this->amanWindow;
+		this->amanWindow = NULL;
 	}
 }
