@@ -4,6 +4,7 @@ Aman/Release/
 Aman/euroscope_sector_providers.txt
 Aman/SectorFileProviderDescriptor.txt
 Aman/ipaddr.txt
+Aman/version.txt
 Debug/
 enc_temp_folder/
 *.exp

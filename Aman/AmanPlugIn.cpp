@@ -41,35 +41,46 @@ std::vector<AmanAircraft> AmanPlugIn::getFixInboundList(const char* fixName) {
 	CRadarTarget rt;
 	std::vector<AmanAircraft> aircraftList;
 	for (rt = pMyPlugIn->RadarTargetSelectFirst(); rt.IsValid(); rt = pMyPlugIn->RadarTargetSelectNext(rt)) {
+		if (rt.GetPosition().GetReportedGS() < 60) {
+			continue;
+		}
+
+		CFlightPlanExtractedRoute route = rt.GetCorrelatedFlightPlan().GetExtractedRoute();
+		CFlightPlanPositionPredictions predictions = rt.GetCorrelatedFlightPlan().GetPositionPredictions();
+
 		int fixId = getFixIndexByName(rt, fixName);
-		bool passed = rt.GetCorrelatedFlightPlan().GetExtractedRoute().GetPointDistanceInMinutes(fixId) == -1;
-		bool fixIsDestination = fixId == rt.GetCorrelatedFlightPlan().GetExtractedRoute().GetPointsNumber() - 1;
 
-		if (!passed && fixId != -1) {
-			CFlightPlanExtractedRoute route = rt.GetCorrelatedFlightPlan().GetExtractedRoute();
-			CFlightPlanPositionPredictions predictions = rt.GetCorrelatedFlightPlan().GetPositionPredictions();
+		if (fixId != -1 && route.GetPointDistanceInMinutes(fixId) > -1) {	// Target fix found and has not been passed
+			bool fixIsDestination = fixId == route.GetPointsNumber() - 1;
+			int timeToFix;
 
-			float min1dist = INFINITE;
-			float min2dist = INFINITE;
-			float minScore = INFINITE;
-
-			int predIndexBeforeWp = 0;
-
-			for (int p = 0; p < predictions.GetPointsNumber(); p++) {
-				float dist1 = predictions.GetPosition(p).DistanceTo(route.GetPointPosition(fixId));
-				float dist2 = predictions.GetPosition(p + 1).DistanceTo(route.GetPointPosition(fixId));
-
-				if (dist1 + dist2 < minScore) {
-					min1dist = dist1;
-					min2dist = dist2;
-					minScore = dist1 + dist2;
-					predIndexBeforeWp = p;
-				}
+			if (fixIsDestination) {
+				float altAtLastPosPred = predictions.GetAltitude(predictions.GetPointsNumber() - 1);
+				float lastPredSpeed = rt.GetCorrelatedFlightPlan().GetFlightPlanData().PerformanceGetIas(altAtLastPosPred, -1);
+				float restDistance = predictions.GetPosition(predictions.GetPointsNumber() - 1).DistanceTo(route.GetPointPosition(fixId));
+				timeToFix = (predictions.GetPointsNumber() - 1) * 60 + (restDistance / lastPredSpeed) * 60.0 * 60.0;
 			}
+			else {
+				// Find the two position prediction points closest to the target point
+				float min1dist = INFINITE;
+				float min2dist = INFINITE;
+				float minScore = INFINITE;
+				int predIndexBeforeWp = 0;
 
-			float ratio = (min1dist / (min1dist + min2dist));
-			int timeToFix = predIndexBeforeWp * 60.0 + ratio * 60.0;
-			double distToFix = findRemainingDist(rt, fixId);
+				for (int p = 0; p < predictions.GetPointsNumber(); p++) {
+					float dist1 = predictions.GetPosition(p).DistanceTo(route.GetPointPosition(fixId));
+					float dist2 = predictions.GetPosition(p + 1).DistanceTo(route.GetPointPosition(fixId));
+
+					if (dist1 + dist2 < minScore) {
+						min1dist = dist1;
+						min2dist = dist2;
+						minScore = dist1 + dist2;
+						predIndexBeforeWp = p;
+					}
+				}
+				float ratio = (min1dist / (min1dist + min2dist));
+				timeToFix = predIndexBeforeWp * 60.0 + ratio * 60.0;
+			}
 
 			if (timeToFix > 0) {
 				aircraftList.push_back({
@@ -80,11 +91,23 @@ std::vector<AmanAircraft> AmanPlugIn::getFixInboundList(const char* fixName) {
 					rt.GetCorrelatedFlightPlan().GetTrackingControllerIsMe(),
 					rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetAircraftWtc(),
 					timeNow + timeToFix - rt.GetPosition().GetReceivedTime(),
-					distToFix
+					findRemainingDist(rt, fixId),
+					0
 					});
 			}
 		}
 	}
+	if (aircraftList.size() > 0) {
+		std::sort(aircraftList.begin(), aircraftList.end());
+		std::reverse(aircraftList.begin(), aircraftList.end());
+		for (int i = 0; i < aircraftList.size() - 1; i++) {
+			AmanAircraft* curr = &aircraftList[i];
+			AmanAircraft* next = &aircraftList[i + 1];
+
+			curr->timeToNextAircraft = curr->eta - next->eta;
+		}
+	}
+	
 	return aircraftList;
 }
 

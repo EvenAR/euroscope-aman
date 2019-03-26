@@ -153,7 +153,7 @@ void AmanTimeline::drawAircraftChain(HDC hdc, int timeNow, int xStart, int yStar
 			<< std::left << std::setfill(' ') << std::setw(7)
 			<< nextFix
 			<< std::left << std::setfill(' ') << std::setw(5)
-			<< round(aircraft.distLeft);
+			<< round(aircraft.timeToNextAircraft / 60);
 
 
 		if (aircraft.trackedByMe) {
