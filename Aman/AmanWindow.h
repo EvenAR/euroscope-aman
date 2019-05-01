@@ -17,6 +17,8 @@ public:
 	~AmanWindow();
 
 	void render(std::vector<AmanTimeline>* timelines);
+	void setWindowPosition(CRect rect);
+	void minimize();
 private:	
 	DWORD threadId;
 
@@ -24,5 +26,6 @@ private:
 	static void drawContent(HWND hwnd);
 	static DWORD WINAPI threadProc(LPVOID lpParam);
 	static void close(HINSTANCE inj_hModule, HWND hwnd);
+	static void mouseHover(CRect windowRect, CPoint cursorPosition);
 };
 

@@ -30,15 +30,15 @@ AmanTimeline::AmanTimeline(std::string fixLeft, std::string fixRight, int second
 	this->aircraftLists = new std::vector<AmanAircraft>[2];
 };
 
-void AmanTimeline::render(RECT clinetRect, HDC hdc, int column) {
+void AmanTimeline::render(CRect clientRect, HDC hdc, int column) {
 	long int now = static_cast<long int> (std::time(nullptr));			// Current UNIX-timestamp in seconds
 	int minutesNow = (now / 60 + 1);									// UNIX time in minutes
 
 	int xOffset = column * AMAN_WIDTH;
 
 	// Window size-dependent calculations
-	int top = clinetRect.top;											// Top of timeline (future) in pixels
-	int bottom = clinetRect.bottom - AMAN_TIMELINE_REALTIME_OFFSET;		// Bottom of timeline (now) in pixels
+	int top = clientRect.top;											// Top of timeline (future) in pixels
+	int bottom = clientRect.bottom - AMAN_TIMELINE_REALTIME_OFFSET;		// Bottom of timeline (now) in pixels
 	double pixelsPerSec = (float)(bottom - top) / (float)this->seconds;
 	double pixelsPerMin = 60.0 * pixelsPerSec;
 
@@ -47,18 +47,18 @@ void AmanTimeline::render(RECT clinetRect, HDC hdc, int column) {
 	// Timeline bar
 	int secToNextMin = 60 - (now % 60);
 
-	RECT futureRect = { xOffset, 0, xOffset + AMAN_TIMELINE_WIDTH, clinetRect.bottom };
+	CRect futureRect = { xOffset, 0, xOffset + AMAN_TIMELINE_WIDTH, clientRect.bottom };
 	FillRect(hdc, &futureRect, AMAN_BRUSH_TIMELINE_AHEAD);
-	RECT pastRect = { xOffset, clinetRect.bottom - AMAN_TIMELINE_REALTIME_OFFSET, xOffset + AMAN_TIMELINE_WIDTH, clinetRect.bottom };
+	CRect pastRect = { xOffset, clientRect.bottom - AMAN_TIMELINE_REALTIME_OFFSET, xOffset + AMAN_TIMELINE_WIDTH, clientRect.bottom };
 	FillRect(hdc, &pastRect, AMAN_BRUSH_TIMELINE_PAST);
 	
 	// Vertical white line(s)
 	HPEN oldPen = (HPEN)SelectObject(hdc, AMAN_VERTICAL_LINE_PEN);
-	MoveToEx(hdc, xOffset + AMAN_TIMELINE_WIDTH, clinetRect.bottom, NULL);
-	LineTo(hdc, xOffset + AMAN_TIMELINE_WIDTH, clinetRect.top);
+	MoveToEx(hdc, xOffset + AMAN_TIMELINE_WIDTH, clientRect.bottom, NULL);
+	LineTo(hdc, xOffset + AMAN_TIMELINE_WIDTH, clientRect.top);
 	if (dual) {
-		MoveToEx(hdc, xOffset, clinetRect.bottom, NULL);
-		LineTo(hdc, xOffset, clinetRect.top);
+		MoveToEx(hdc, xOffset, clientRect.bottom, NULL);
+		LineTo(hdc, xOffset, clientRect.top);
 	}
 
 	// Render the horizontal bars + times
@@ -82,11 +82,11 @@ void AmanTimeline::render(RECT clinetRect, HDC hdc, int column) {
 		if (minAtLine % 10 == 0) {
 			int hoursAtLine = ((minutesNow + min) / 60) % 24;
 			timeStr << std::setfill('0') << std::setw(2) << hoursAtLine << ":" << std::setw(2) << minAtLine;
-			RECT rect = { xOffset, linePos - 6, xOffset + AMAN_TIMELINE_WIDTH, linePos + 6 };
+			CRect rect = { xOffset, linePos - 6, xOffset + AMAN_TIMELINE_WIDTH, linePos + 6 };
 			DrawText(hdc, timeStr.str().c_str(), strlen(timeStr.str().c_str()), &rect, DT_CENTER);
 		} else {
 			timeStr << std::setfill('0') << std::setw(2) << minAtLine;
-			RECT rect = { xOffset, linePos - 6, xOffset + AMAN_TIMELINE_WIDTH, linePos + 6 };
+			CRect rect = { xOffset, linePos - 6, xOffset + AMAN_TIMELINE_WIDTH, linePos + 6 };
 			DrawText(hdc, timeStr.str().c_str(), strlen(timeStr.str().c_str()), &rect, DT_CENTER);
 		}
 
@@ -110,7 +110,7 @@ void AmanTimeline::render(RECT clinetRect, HDC hdc, int column) {
 	SetBkMode(hdc, OPAQUE);
 	SetTextColor(hdc, AMAN_COLOR_FIX_TEXT);
 	SelectObject(hdc, AMAN_FIX_FONT);
-	RECT rect = { xOffset - AMAN_TIMELINE_WIDTH, clinetRect.bottom - 20, xOffset + 2*AMAN_TIMELINE_WIDTH, clinetRect.bottom };
+	CRect rect = { xOffset - AMAN_TIMELINE_WIDTH, clientRect.bottom - 20, xOffset + 2*AMAN_TIMELINE_WIDTH, clientRect.bottom };
 	std::string text = this->dual ? this->fixes[1] + "/" + this->fixes[0] : this->fixes[0];
 	DrawText(hdc, text.c_str(), text.length(), &rect, DT_CENTER);
 
@@ -133,7 +133,7 @@ void AmanTimeline::drawAircraftChain(HDC hdc, int timeNow, int xStart, int yStar
 		AmanAircraft aircraft = aircraftList.at(ac);
 		int acPos = yStart - (aircraft.eta - timeNow) * pixelsPerSec;
 		COLORREF oldTextColor;
-		RECT rect;
+		CRect rect;
 
 		const char* nextFix = "-----";
 		if (strlen(aircraft.nextFix) > 0) {

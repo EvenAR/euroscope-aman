@@ -190,6 +190,7 @@
     <ClCompile Include="AmanPlugIn.cpp" />
     <ClCompile Include="AmanTimeline.cpp" />
     <ClCompile Include="AmanWindow.cpp" />
+    <ClCompile Include="TitleBar.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -210,6 +211,7 @@
     <ClInclude Include="AmanTimeline.h" />
     <ClInclude Include="AmanWindow.h" />
     <ClInclude Include="Constants.h" />
+    <ClInclude Include="TitleBar.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />

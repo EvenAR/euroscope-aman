@@ -5,6 +5,7 @@
 #include "AmanTimeline.h"
 #include "AmanWindow.h"		
 #include "Constants.h"
+#include "TitleBar.h"
 
 #include <ctime>
 #include <sstream>
@@ -16,33 +17,55 @@ std::vector<AmanTimeline> gpTimelines;
 
 std::mutex timelineDataMutex;
 HINSTANCE  hInstance;
+CPoint position;
+HWND hwnd;
+
+TitleBar* titleBar;
 
 AmanWindow::AmanWindow(AmanController* controller) {
+	titleBar = new TitleBar(controller);
 	hInstance = GetModuleHandle(NULL);
 	gpController = controller;
 	CreateThread(0, NULL, AmanWindow::threadProc, NULL, NULL, &threadId);
 }
 
 void AmanWindow::render(std::vector<AmanTimeline>* timelines) {
-	timelineDataMutex.lock();
-	gpTimelines = *timelines;
-	timelineDataMutex.unlock();
+	if (timelines) {
+		timelineDataMutex.lock();
+		gpTimelines = *timelines;
+		timelineDataMutex.unlock();
+	}
 	PostThreadMessage(threadId, AIRCRAFT_DATA, NULL, NULL);
+}
+
+void AmanWindow::setWindowPosition(CRect rect) {
+	MoveWindow(
+		hwnd,
+		rect.left,
+		rect.top,
+		rect.Width(), 
+		rect.Height(),
+		false
+	);
+}
+
+void AmanWindow::minimize() {
+	ShowWindow(hwnd, SW_MINIMIZE);
 }
 
 // Window thread procedure
 DWORD WINAPI AmanWindow::threadProc(LPVOID lpParam)
 {
-	HWND	   hwnd;
 	WNDCLASSEX wc;
 	wc.hInstance = hInstance;
 	wc.lpszClassName = AMAN_WINDOW_CLASS_NAME;
 	wc.lpfnWndProc = AmanWindow::windowProc;
-	wc.style = CS_DBLCLKS;
+	wc.style = CS_HREDRAW | CS_VREDRAW;
 	wc.cbSize = sizeof(WNDCLASSEX);
-	wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-	wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
+	wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APPLICATION));
+	wc.hIconSm = LoadIcon(wc.hInstance, MAKEINTRESOURCE(IDI_APPLICATION));
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+
 	wc.lpszMenuName = NULL;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
@@ -57,7 +80,7 @@ DWORD WINAPI AmanWindow::threadProc(LPVOID lpParam)
 		WS_EX_TOPMOST, 
 		AMAN_WINDOW_CLASS_NAME, 
 		AMAN_WINDOW_TITLE, 
-		WS_EX_PALETTEWINDOW | WS_EX_TOPMOST, 
+		WS_POPUP,
 		CW_USEDEFAULT, 
 		CW_USEDEFAULT, 
 		600, 
@@ -71,7 +94,7 @@ DWORD WINAPI AmanWindow::threadProc(LPVOID lpParam)
 	SetWindowLong(
 		hwnd, 
 		GWL_STYLE, 
-		GetWindowLong(hwnd, GWL_STYLE) | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_THICKFRAME
+		GetWindowLong(hwnd, GWL_STYLE) | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU
 	);
 	
 	ShowWindow(hwnd, SW_SHOWNORMAL);
@@ -93,29 +116,64 @@ DWORD WINAPI AmanWindow::threadProc(LPVOID lpParam)
 // The window procedure
 LRESULT CALLBACK AmanWindow::windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	const int BORDERWIDTH = 0;
+	const int TITLEBARWIDTH = 20;
+	CRect windowRect;
+	CPoint cursorPosition;
+	GetWindowRect(hwnd, &windowRect);
+	GetCursorPos(&cursorPosition);
+
+	int xPos;
+	int yPos;
 	int res;
-	switch (message)
-	{
-	case WM_COMMAND:
+	switch (message) {
+		case WM_DESTROY: {
+			PostQuitMessage(0);
+		}
 		break;
-	case WM_DESTROY:
-		PostQuitMessage(0);
+	case WM_SIZING: {
+			InvalidateRect(hwnd, NULL, FALSE);
+			AmanWindow::drawContent(hwnd);
+		}
 		break;
-	case WM_SIZING:
-		InvalidateRect(hwnd, NULL, FALSE);
-		AmanWindow::drawContent(hwnd);
+	case WM_SIZE: {
+			InvalidateRect(hwnd, NULL, FALSE);
+			AmanWindow::drawContent(hwnd);
+		}
 		break;
-	case WM_SIZE:
-		InvalidateRect(hwnd, NULL, FALSE);
-		AmanWindow::drawContent(hwnd);
+	case WM_PAINT: {
+			AmanWindow::drawContent(hwnd);
+		}
 		break;
-	case WM_PAINT:
-		AmanWindow::drawContent(hwnd);
+	case WM_CLOSE: {
+			res = DestroyWindow(hwnd);
+			res = UnregisterClass(AMAN_WINDOW_CLASS_NAME, hInstance);
+			gpController->windowClosed();
+		}
 		break;
-	case WM_CLOSE:
-		res = DestroyWindow(hwnd);
-		res = UnregisterClass(AMAN_WINDOW_CLASS_NAME, hInstance);
-		gpController->windowClosed();
+	case WM_LBUTTONDOWN: {
+			SetCapture(hwnd);
+			ScreenToClient(hwnd, &cursorPosition);
+			titleBar->mousePressed(windowRect, cursorPosition);
+		}
+		break;
+	case WM_LBUTTONUP: {
+			ReleaseCapture();
+			gpController->mouseReleased(windowRect, cursorPosition);
+		}
+		break;
+	case WM_MOUSEMOVE: {
+			gpController->mouseMoved(windowRect, cursorPosition);
+			ScreenToClient(hwnd, &cursorPosition);
+			titleBar->mouseHover(windowRect, cursorPosition);
+		}
+		break;
+	case WM_GETMINMAXINFO: {   
+			MINMAXINFO *min_max = reinterpret_cast<MINMAXINFO *>(lParam);
+			min_max->ptMinTrackSize.x = 200;
+			min_max->ptMinTrackSize.y = 200;
+			return 0;
+		}
 		break;
 	default:
 		return DefWindowProc(hwnd, message, wParam, lParam);
@@ -124,14 +182,12 @@ LRESULT CALLBACK AmanWindow::windowProc(HWND hwnd, UINT message, WPARAM wParam, 
 }
 
 void AmanWindow::drawContent(HWND hwnd) {	
-	
-
-	RECT clinetRect;
+	CRect clientRect;
 	int winWidth, winHeight;
 
-	GetClientRect(hwnd, &clinetRect);
-	winWidth = clinetRect.right - clinetRect.left;
-	winHeight = clinetRect.bottom - clinetRect.top;
+	GetClientRect(hwnd, &clientRect);
+	winWidth = clientRect.right - clientRect.left;
+	winHeight = clientRect.bottom - clientRect.top;
 
 	PAINTSTRUCT ps;
 	HDC hDC = BeginPaint(hwnd, &ps);
@@ -144,7 +200,7 @@ void AmanWindow::drawContent(HWND hwnd) {
 	long int now = static_cast<long int> (t);
 
 	// Draw tools
-	FillRect(memdc, &clinetRect, AMAN_BRUSH_MAIN_BACKGROUND);
+	FillRect(memdc, &clientRect, AMAN_BRUSH_MAIN_BACKGROUND);
 
 	int column = 0;
 	timelineDataMutex.lock();
@@ -152,10 +208,13 @@ void AmanWindow::drawContent(HWND hwnd) {
 		if (gpTimelines.at(i).dual) {
 			column++;
 		}
-		gpTimelines.at(i).render(clinetRect, memdc, column);
+		gpTimelines.at(i).render(clientRect, memdc, column);
 		column++;
 	}
 	timelineDataMutex.unlock();
+	
+	// Menu
+	titleBar->render(clientRect, memdc);
 	
 	BitBlt(hDC, 0, 0, winWidth, winHeight, memdc, 0, 0, SRCCOPY);
 	DeleteObject(hBmp);

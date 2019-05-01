@@ -13,7 +13,7 @@ private:
 public:
 	AmanTimeline(std::string fix, int seconds, int resolution);
 	AmanTimeline(std::string fixLeft, std::string fixRight, int seconds, int resolution);
-	void render(RECT clinetRect, HDC memdc, int i);
+	void render(CRect clientRect, HDC memdc, int i);
 
 	bool dual;
 	std::string fixes[2];
