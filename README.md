@@ -19,4 +19,4 @@ The AMAN-display will appear in a separate window once the plugin has been loade
 The plugin .dll-file can be found in the Release folder. [Direct link](https://github.com/EvenAR/euroscope-aman/raw/master/Release/Aman.dll).
 
 
-![alt text](https://i.gyazo.com/86752a2b6c992002a599be6efb2f7779.png)
+![alt text](https://i.gyazo.com/84338383130d1a59cedba452c61fc1a6.png)
