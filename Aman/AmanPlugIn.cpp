@@ -41,6 +41,8 @@ std::vector<AmanAircraft> AmanPlugIn::getFixInboundList(const char* fixName) {
 	CRadarTarget rt;
 	std::vector<AmanAircraft> aircraftList;
 	for (rt = pMyPlugIn->RadarTargetSelectFirst(); rt.IsValid(); rt = pMyPlugIn->RadarTargetSelectNext(rt)) {
+		float groundSpeed = rt.GetPosition().GetReportedGS();
+
 		if (rt.GetPosition().GetReportedGS() < 60) {
 			continue;
 		}
@@ -55,10 +57,8 @@ std::vector<AmanAircraft> AmanPlugIn::getFixInboundList(const char* fixName) {
 			int timeToFix;
 
 			if (fixIsDestination) {
-				float altAtLastPosPred = predictions.GetAltitude(predictions.GetPointsNumber() - 1);
-				float lastPredSpeed = rt.GetCorrelatedFlightPlan().GetFlightPlanData().PerformanceGetIas(altAtLastPosPred, -1);
 				float restDistance = predictions.GetPosition(predictions.GetPointsNumber() - 1).DistanceTo(route.GetPointPosition(fixId));
-				timeToFix = (predictions.GetPointsNumber() - 1) * 60 + (restDistance / lastPredSpeed) * 60.0 * 60.0;
+				timeToFix = (predictions.GetPointsNumber() - 1) * 60 + (restDistance / groundSpeed) * 60.0 * 60.0;
 			}
 			else {
 				// Find the two position prediction points closest to the target point
