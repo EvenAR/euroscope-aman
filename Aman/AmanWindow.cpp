@@ -22,6 +22,9 @@ HWND hwnd;
 
 TitleBar* titleBar;
 
+int originalHeight;
+bool minimized = false;
+
 AmanWindow::AmanWindow(AmanController* controller) {
 	titleBar = new TitleBar(controller);
 	hInstance = GetModuleHandle(NULL);
@@ -49,8 +52,19 @@ void AmanWindow::setWindowPosition(CRect rect) {
 	);
 }
 
-void AmanWindow::minimize() {
-	ShowWindow(hwnd, SW_MINIMIZE);
+void AmanWindow::collapse() {
+	CRect windowRect;
+	GetWindowRect(hwnd, &windowRect);
+	originalHeight = windowRect.Height();
+	windowRect.bottom = windowRect.top + AMAN_TITLEBAR_HEIGHT;
+	AmanWindow::setWindowPosition(windowRect);
+}
+
+void AmanWindow::expand() {
+	CRect windowRect;
+	GetWindowRect(hwnd, &windowRect);
+	windowRect.bottom = windowRect.top + originalHeight;
+	AmanWindow::setWindowPosition(windowRect);
 }
 
 // Window thread procedure
@@ -116,8 +130,6 @@ DWORD WINAPI AmanWindow::threadProc(LPVOID lpParam)
 // The window procedure
 LRESULT CALLBACK AmanWindow::windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	const int BORDERWIDTH = 0;
-	const int TITLEBARWIDTH = 20;
 	CRect windowRect;
 	CPoint cursorPosition;
 	GetWindowRect(hwnd, &windowRect);
@@ -166,13 +178,6 @@ LRESULT CALLBACK AmanWindow::windowProc(HWND hwnd, UINT message, WPARAM wParam, 
 			gpController->mouseMoved(windowRect, cursorPosition);
 			ScreenToClient(hwnd, &cursorPosition);
 			titleBar->mouseHover(windowRect, cursorPosition);
-		}
-		break;
-	case WM_GETMINMAXINFO: {   
-			MINMAXINFO *min_max = reinterpret_cast<MINMAXINFO *>(lParam);
-			min_max->ptMinTrackSize.x = 200;
-			min_max->ptMinTrackSize.y = 200;
-			return 0;
 		}
 		break;
 	default:

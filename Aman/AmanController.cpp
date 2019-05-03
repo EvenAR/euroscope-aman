@@ -59,11 +59,19 @@ void AmanController::mouseMoved(CRect windowRect, CPoint cursorPosition) {
 }
 
 void AmanController::resizebuttonPressed() {
-	this->doResize = true;
+	if (this->expanded) {
+		this->doResize = true;
+	}
 }
 
-void AmanController::closeButtonPressed() {
-	this->amanWindow->minimize();
+void AmanController::collapseButtonPressed() {
+	if (this->expanded) {
+		this->amanWindow->collapse();
+	}
+	else {
+		this->amanWindow->expand();
+	}
+	this->expanded = !this->expanded;
 }
 
 void AmanController::titleBarPressed() {

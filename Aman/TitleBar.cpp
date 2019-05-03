@@ -13,7 +13,7 @@ void TitleBar::render(CRect clientRect, HDC memdc) {
 	int buttonMargin = 5;
 	int buttonSize = 10;
 	
-	this->titleBarRect = { 0, 0, clientRect.right, 20 };
+	this->titleBarRect = { 0, 0, clientRect.right, AMAN_TITLEBAR_HEIGHT };
 
 	this->resizeButton.rect = {
 		clientRect.Width() - buttonMargin - buttonSize,
@@ -80,7 +80,7 @@ void TitleBar::mousePressed(CRect clientRect, CPoint cursorPosition) {
 		controller->resizebuttonPressed();
 	}
 	else if (this->closeButton.rect.PtInRect(cursorPosition)) {
-		controller->closeButtonPressed();
+		controller->collapseButtonPressed();
 	}
 	else if (this->titleBarRect.PtInRect(cursorPosition)) {
 		controller->titleBarPressed();

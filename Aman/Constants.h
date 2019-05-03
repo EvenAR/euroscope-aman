@@ -29,6 +29,7 @@ const HFONT AMAN_TIME_FONT = CreateFont(11, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 3, 2
 const HFONT AMAN_LABEL_FONT = CreateFont(11, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 3, 2, 1, 49, "EuroScope");
 const HFONT AMAN_FIX_FONT = CreateFont(13, 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 3, 2, 1, 49, "EuroScope");
 
+const int AMAN_TITLEBAR_HEIGHT = 20;
 const int AMAN_TIMELINE_WIDTH = 50;
 const int AMAN_TIMELINE_TIME_POS = 40;
 const int AMAN_TIMELINE_REALTIME_OFFSET = 50;

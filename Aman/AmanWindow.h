@@ -18,7 +18,8 @@ public:
 
 	void render(std::vector<AmanTimeline>* timelines);
 	void setWindowPosition(CRect rect);
-	void minimize();
+	void collapse();
+	void expand();
 private:	
 	DWORD threadId;
 

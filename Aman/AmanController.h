@@ -10,6 +10,7 @@ class AmanController
 {
 	
 private:
+	bool expanded = true;
 	bool moveWindow = false;
 	bool doResize = false;
 	CPoint mouseDownPosition;
@@ -30,7 +31,7 @@ public:
 
 	void resizebuttonPressed();
 	void titleBarPressed();
-	void closeButtonPressed();
+	void collapseButtonPressed();
 
 	~AmanController();
 };
