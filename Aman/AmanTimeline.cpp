@@ -37,22 +37,25 @@ void AmanTimeline::render(CRect clientRect, HDC hdc, int column) {
 	int minutesNow = (now / 60 + 1);									// UNIX time in minutes
 
 	int xOffset = column * AMAN_WIDTH;
+	if (this->dual) {
+		xOffset -= AMAN_TIMELINE_WIDTH;
+	}
 
 	// Window size-dependent calculations
-	int top = clientRect.top;											// Top of timeline (future) in pixels
-	int bottom = clientRect.bottom - AMAN_TIMELINE_REALTIME_OFFSET;		// Bottom of timeline (now) in pixels
-	double pixelsPerSec = (float)(bottom - top) / (float)this->seconds;
+	int topHeight = clientRect.top;												// Top of timeline (future) in pixels
+	int bottomHeight = clientRect.bottom - AMAN_TIMELINE_REALTIME_OFFSET;		// Bottom of timeline (now) in pixels
+	double pixelsPerSec = (float)(bottomHeight - topHeight) / (float)this->seconds;
 	double pixelsPerMin = 60.0 * pixelsPerSec;
 
 	// Timeline bar
 	int secToNextMin = 60 - (now % 60);
 
-	CRect futureRect = { xOffset, 0, xOffset + AMAN_TIMELINE_WIDTH, clientRect.bottom };
-	FillRect(hdc, &futureRect, AMAN_BRUSH_TIMELINE_AHEAD);
-	CRect pastRect = { xOffset, clientRect.bottom - AMAN_TIMELINE_REALTIME_OFFSET, xOffset + AMAN_TIMELINE_WIDTH, clientRect.bottom };
-	FillRect(hdc, &pastRect, AMAN_BRUSH_TIMELINE_PAST);
+	CRect futureBackground = { xOffset, 0, xOffset + AMAN_TIMELINE_WIDTH, clientRect.bottom };
+	FillRect(hdc, &futureBackground, AMAN_BRUSH_TIMELINE_AHEAD);
+	CRect pastBackground = { xOffset, clientRect.bottom - AMAN_TIMELINE_REALTIME_OFFSET, xOffset + AMAN_TIMELINE_WIDTH, clientRect.bottom };
+	FillRect(hdc, &pastBackground, AMAN_BRUSH_TIMELINE_PAST);
 	
-	// Vertical white line(s)
+	// Vertical white border(s)
 	HPEN oldPen = (HPEN)SelectObject(hdc, AMAN_VERTICAL_LINE_PEN);
 	MoveToEx(hdc, xOffset + AMAN_TIMELINE_WIDTH, clientRect.bottom, NULL);
 	LineTo(hdc, xOffset + AMAN_TIMELINE_WIDTH, clientRect.top);
@@ -61,11 +64,11 @@ void AmanTimeline::render(CRect clientRect, HDC hdc, int column) {
 		LineTo(hdc, xOffset, clientRect.top);
 	}
 
-	// Render the horizontal bars + times
+	// Render minute ticks with times
 	HFONT oldFont = (HFONT)SelectObject(hdc, AMAN_TIME_FONT);
 	COLORREF oldColor = SetTextColor(hdc, AMAN_COLOR_TIME_TEXT);
 	int oldBackground = SetBkMode(hdc, TRANSPARENT);
-	int nextMinutePosition = bottom - secToNextMin * pixelsPerSec;
+	int nextMinutePosition = bottomHeight - secToNextMin * pixelsPerSec;
 	
 	int nextMinute = minutesNow % 60 ;		// Clock minute time
 
@@ -79,12 +82,14 @@ void AmanTimeline::render(CRect clientRect, HDC hdc, int column) {
 			tickLength = 8;
 		}
 
-		if (minAtLine % 10 == 0) {
+		if (minAtLine % 10 == 0) { 
+			// 10 minute tick
 			int hoursAtLine = ((minutesNow + min) / 60) % 24;
 			timeStr << std::setfill('0') << std::setw(2) << hoursAtLine << ":" << std::setw(2) << minAtLine;
 			CRect rect = { xOffset, linePos - 6, xOffset + AMAN_TIMELINE_WIDTH, linePos + 6 };
 			DrawText(hdc, timeStr.str().c_str(), strlen(timeStr.str().c_str()), &rect, DT_CENTER);
 		} else {
+			// 1 minute tick
 			timeStr << std::setfill('0') << std::setw(2) << minAtLine;
 			CRect rect = { xOffset, linePos - 6, xOffset + AMAN_TIMELINE_WIDTH, linePos + 6 };
 			DrawText(hdc, timeStr.str().c_str(), strlen(timeStr.str().c_str()), &rect, DT_CENTER);
@@ -100,9 +105,9 @@ void AmanTimeline::render(CRect clientRect, HDC hdc, int column) {
 
 	// Draw aircraft
 	SelectObject(hdc, AMAN_LABEL_FONT);
-	drawAircraftChain(hdc, now, xOffset, bottom, pixelsPerSec, false, this->aircraftLists[0]);
+	drawAircraftChain(hdc, now, xOffset, bottomHeight, pixelsPerSec, false, this->aircraftLists[0]);
 	if (this->dual) {
-		drawAircraftChain(hdc, now, xOffset, bottom, pixelsPerSec, true, this->aircraftLists[1]);
+		drawAircraftChain(hdc, now, xOffset, bottomHeight, pixelsPerSec, true, this->aircraftLists[1]);
 	}
 	
 	// Draw the fix id
