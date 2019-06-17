@@ -34,14 +34,13 @@ AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE,
 	const char* settings = this->GetDataFromSettings("AMAN");
 
 	if (settings) {
-		auto settingsString = std::string(settings);
-		auto timelinesFromSettings = AmanPlugIn::splitString(settingsString.c_str(), SETTINGS_TIMELINE_DELIMITER);
+		auto timelinesFromSettings = AmanPlugIn::splitString(settings, SETTINGS_TIMELINE_DELIMITER);
 		for (std::string timeline : timelinesFromSettings) {
 			try {
 				auto timelineParams = AmanPlugIn::splitString(timeline.c_str(), SETTINGS_PARAM_DELIMITER);
 				std::string id = timelineParams.at(0);
-				int length = atoi(timelineParams.at(1).c_str()) / 60;
-				int interval = atoi(timelineParams.at(2).c_str());
+				int length = std::stoi(timelineParams.at(1)) / 60;
+				int interval = std::stoi(timelineParams.at(2));
 
 				this->addTimeline(id, length, interval);
 
