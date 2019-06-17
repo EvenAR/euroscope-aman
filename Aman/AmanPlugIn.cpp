@@ -159,6 +159,7 @@ void AmanPlugIn::OnTimer(int Counter) {
 
 bool AmanPlugIn::OnCompileCommand(const char * sCommandLine) {
 	bool cmdHandled = false;
+	bool timelinesChanged = false;
 
 	auto args = AmanPlugIn::splitString(sCommandLine, ' ');
 	
@@ -167,6 +168,11 @@ bool AmanPlugIn::OnCompileCommand(const char * sCommandLine) {
 
 		if (command == "show") {
 			amanController->openWindow();
+			cmdHandled = true;
+		}
+		if (command == "clear") {
+			timelines.clear();
+			timelinesChanged = true;
 			cmdHandled = true;
 		}
 		else if (args.size() >= 3) {
@@ -184,7 +190,7 @@ bool AmanPlugIn::OnCompileCommand(const char * sCommandLine) {
 					}
 				}
 				this->addTimeline(id, length, interval);
-				this->saveToSettings();
+				timelinesChanged = true;
 				cmdHandled = true;
 			}
 			// Remove a timeline
@@ -192,25 +198,29 @@ bool AmanPlugIn::OnCompileCommand(const char * sCommandLine) {
 				for (int i = 0; i < timelines.size(); i++) {
 					auto timeline = timelines.at(i);
 					auto fixNames = timeline.getFixNames();
+					auto idsFromArg = AmanPlugIn::splitString(id, '/');
 
-					if (timeline.isDual() && id.find('/') != std::string::npos) {
-						std::string id1 = id.substr(0, id.find('/'));
-						std::string id2 = id.substr(id1.length() + 1);
-
-						if (fixNames[0] == id2 && fixNames[1] == id1) {
+					if (timeline.isDual() && idsFromArg.size() == 2) {
+						if (idsFromArg.at(1) == fixNames[0] && idsFromArg.at(0) == fixNames[1]) {
 							timelines.erase(timelines.begin() + i);
+							timelinesChanged = true;
 							cmdHandled = true;
 						}
 					}
-					else if (id == fixNames[0]) {
+					else if (!timeline.isDual() && id == fixNames[0]) {
 						timelines.erase(timelines.begin() + i);
+						timelinesChanged = true;
 						cmdHandled = true;
 					}
 				}
 			}
 		}
 	}
-	amanController->timelinesUpdated(&timelines);
+	if (timelinesChanged) {
+		amanController->timelinesUpdated(&timelines);
+		this->saveToSettings();
+	}
+	
 	return cmdHandled;
 }
 
