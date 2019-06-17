@@ -27,7 +27,7 @@ std::unordered_map<const char*, AmanAircraft> allAircraft;
 
 AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE,
 	"Arrival Manager",
-	"1.0.0",
+	"1.2.0",
 	"Even Rognlien",
 	"Open source")
 {
