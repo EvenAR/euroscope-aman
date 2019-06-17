@@ -209,11 +209,11 @@ void AmanWindow::drawContent(HWND hwnd) {
 
 	int column = 0;
 	timelineDataMutex.lock();
-	for (int i = 0; i < gpTimelines.size(); i++) {
-		if (gpTimelines.at(i).dual) {
+	for each (AmanTimeline timeline in gpTimelines) {
+		if (timeline.isDual()) {
 			column++;
 		}
-		gpTimelines.at(i).render(clientRect, memdc, column);
+		timeline.render(clientRect, memdc, column);
 		column++;
 	}
 	timelineDataMutex.unlock();

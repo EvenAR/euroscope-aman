@@ -12,9 +12,10 @@ AmanTimeline::AmanTimeline(std::string fix, int seconds, int resolution) {
 	this->dual = false;
 	this->seconds = seconds;
 	this->resolution = resolution;
+	this->identifier = fix;
 
-	this->fixes[0] = fix;
-	this->fixes[1] = "";
+	this->fixNames[0] = fix;
+	this->fixNames[1] = "";
 
 	this->aircraftLists = new std::vector<AmanAircraft>[2];
 };
@@ -23,9 +24,10 @@ AmanTimeline::AmanTimeline(std::string fixLeft, std::string fixRight, int second
 	this->dual = true;
 	this->seconds = seconds;
 	this->resolution = resolution;
+	this->identifier = fixLeft + "/" + fixRight;
 
-	this->fixes[0] = fixLeft;
-	this->fixes[1] = fixRight;
+	this->fixNames[0] = fixRight;
+	this->fixNames[1] = fixLeft;
 
 	this->aircraftLists = new std::vector<AmanAircraft>[2];
 };
@@ -41,8 +43,6 @@ void AmanTimeline::render(CRect clientRect, HDC hdc, int column) {
 	int bottom = clientRect.bottom - AMAN_TIMELINE_REALTIME_OFFSET;		// Bottom of timeline (now) in pixels
 	double pixelsPerSec = (float)(bottom - top) / (float)this->seconds;
 	double pixelsPerMin = 60.0 * pixelsPerSec;
-
-	
 
 	// Timeline bar
 	int secToNextMin = 60 - (now % 60);
@@ -111,7 +111,7 @@ void AmanTimeline::render(CRect clientRect, HDC hdc, int column) {
 	SetTextColor(hdc, AMAN_COLOR_FIX_TEXT);
 	SelectObject(hdc, AMAN_FIX_FONT);
 	CRect rect = { xOffset - AMAN_TIMELINE_WIDTH, clientRect.bottom - 20, xOffset + 2*AMAN_TIMELINE_WIDTH, clientRect.bottom };
-	std::string text = this->dual ? this->fixes[1] + "/" + this->fixes[0] : this->fixes[0];
+	std::string text = this->dual ? this->fixNames[1] + "/" + this->fixNames[0] : this->fixNames[0];
 	DrawText(hdc, text.c_str(), text.length(), &rect, DT_CENTER);
 
 	// Restore settings
