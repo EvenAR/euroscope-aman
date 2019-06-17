@@ -49,7 +49,7 @@ AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE,
 					"AMAN", 
 					"Info",
 					("The following timeline was loaded from settings: " + id).c_str(), 
-					false, true, false, false, false);
+					true, false, false, false, false);
 			}
 			catch (const std::exception& e) {
 				std::string msg = "Invalid format in settings file: ";
@@ -57,7 +57,7 @@ AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE,
 					"AMAN", 
 					"Error", 
 					("Unable to load timeline from settings: " + timeline).c_str(),
-					true, true, true, true, true);
+					true, false, false, false, false);
 			}	
 		}
 	}
