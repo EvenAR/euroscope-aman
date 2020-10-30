@@ -23,15 +23,16 @@ public:
 	AmanController(AmanPlugIn* plugin);
 	void openWindow();
 	void windowClosed();
-	void requestRepaint();
 	void mousePressed(CRect windowRect, CPoint cursorPosition);
 	void mouseReleased(CRect windowRect, CPoint cursorPosition);
 	void mouseMoved(CRect windowRect, CPoint cursorPosition);
-	void timelinesUpdated(std::vector<AmanTimeline>* timelines);
+	void mouseWheelSrolled(CPoint cursorPosition, short delta);
+	void timelinesUpdated();
 
 	void resizebuttonPressed();
 	void titleBarPressed();
 	void collapseButtonPressed();
+	std::vector<AmanTimeline*>* getTimelines();
 
 	~AmanController();
 };

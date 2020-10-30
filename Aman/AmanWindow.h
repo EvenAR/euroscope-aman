@@ -16,10 +16,12 @@ public:
 	AmanWindow(AmanController* controller);
 	~AmanWindow();
 
-	void render(std::vector<AmanTimeline>* timelines);
+	void render();
 	void setWindowPosition(CRect rect);
 	void collapse();
 	void expand();
+	AmanTimeline* getTimelineAt(CPoint cursorPosition);
+
 private:	
 	DWORD threadId;
 

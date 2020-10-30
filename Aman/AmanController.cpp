@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "AmanController.h"
 #include "AmanWindow.h"
+#include "AmanPlugIn.h"
+#include "AmanTimeline.h"
 
 AmanController::AmanController(AmanPlugIn* plugin) {
 	this->amanPlugin = plugin;
@@ -16,16 +18,14 @@ void AmanController::openWindow() {
 	}
 }
 
-void AmanController::timelinesUpdated(std::vector<AmanTimeline>* timelines) {
+void AmanController::timelinesUpdated() {
 	if (this->amanWindow != NULL) {
-		this->amanWindow->render(timelines);
+		this->amanWindow->render();
 	}
 }
 
-void AmanController::requestRepaint() {
-	if (this->amanWindow != NULL) {
-		this->amanWindow->render(NULL);
-	}
+std::vector<AmanTimeline*>* AmanController::getTimelines() {
+	return this->amanPlugin->getTimelines();
 }
 
 void AmanController::mousePressed(CRect windowRect, CPoint cursorPosition) {
@@ -56,6 +56,20 @@ void AmanController::mouseMoved(CRect windowRect, CPoint cursorPosition) {
 		this->amanWindow->setWindowPosition(windowRect);
 	}
 	this->previousMousePosition = cursorPosition;
+}
+
+void AmanController::mouseWheelSrolled(CPoint cursorPosition, short delta) {
+	auto timeline = this->amanWindow->getTimelineAt(cursorPosition);
+	if (timeline) {
+		auto currentZoom = timeline->getLength();
+		auto newZoom = currentZoom - delta;
+		auto limitReached = newZoom < 60 * 5 || newZoom > 3600 * 3;
+
+		if (!limitReached) {
+			timeline->zoom(newZoom);
+			timelinesUpdated();
+		}
+	}
 }
 
 void AmanController::resizebuttonPressed() {

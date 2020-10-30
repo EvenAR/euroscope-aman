@@ -13,7 +13,6 @@
 #include <mutex>
 
 AmanController* gpController;
-std::vector<AmanTimeline> gpTimelines;
 
 std::mutex timelineDataMutex;
 HINSTANCE  hInstance;
@@ -32,12 +31,8 @@ AmanWindow::AmanWindow(AmanController* controller) {
 	CreateThread(0, NULL, AmanWindow::threadProc, NULL, NULL, &threadId);
 }
 
-void AmanWindow::render(std::vector<AmanTimeline>* timelines) {
-	if (timelines) {
-		timelineDataMutex.lock();
-		gpTimelines = *timelines;
-		timelineDataMutex.unlock();
-	}
+void AmanWindow::render() {
+	// Tell the window that new aircraft data is available
 	PostThreadMessage(threadId, AIRCRAFT_DATA, NULL, NULL);
 }
 
@@ -121,7 +116,7 @@ DWORD WINAPI AmanWindow::threadProc(LPVOID lpParam)
 
 		switch (msg.message) {
 		case AIRCRAFT_DATA:
-			RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE);
+			RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE);		// Triggers WM_PAINT
 		}
 	}	
 	return true;
@@ -180,6 +175,13 @@ LRESULT CALLBACK AmanWindow::windowProc(HWND hwnd, UINT message, WPARAM wParam, 
 			titleBar->mouseHover(windowRect, cursorPosition);
 		}
 		break;
+	case WM_MOUSEWHEEL: {
+			short delta = GET_WHEEL_DELTA_WPARAM(wParam);
+			if (windowRect.PtInRect(cursorPosition)) {
+				gpController->mouseWheelSrolled(cursorPosition, delta);
+			}
+		}
+		break;
 	default:
 		return DefWindowProc(hwnd, message, wParam, lParam);
 	}
@@ -207,16 +209,10 @@ void AmanWindow::drawContent(HWND hwnd) {
 	// Draw tools
 	FillRect(memdc, &clientRect, AMAN_BRUSH_MAIN_BACKGROUND);
 
-	int column = 0;
-	timelineDataMutex.lock();
-	for each (AmanTimeline timeline in gpTimelines) {
-		if (timeline.isDual()) {
-			column++;
-		}
-		timeline.render(clientRect, memdc, column);
-		column++;
+	CRect rectangle;
+	for (AmanTimeline* timeline : *gpController->getTimelines()) {
+		 rectangle = timeline->render(clientRect, memdc, rectangle.right);
 	}
-	timelineDataMutex.unlock();
 	
 	// Menu
 	titleBar->render(clientRect, memdc);
@@ -226,6 +222,20 @@ void AmanWindow::drawContent(HWND hwnd) {
 	DeleteDC(memdc);
 	DeleteDC(hDC);
 	EndPaint(hwnd, &ps);	
+}
+
+AmanTimeline* AmanWindow::getTimelineAt(CPoint cursorPosition) {
+	CRect windowRect;
+	GetWindowRect(hwnd, &windowRect);
+	ScreenToClient(hwnd, &cursorPosition);
+
+	CRect coveringArea;
+	for (AmanTimeline* timeline : *gpController->getTimelines()) {
+		coveringArea = timeline->getArea(windowRect, coveringArea.right);
+		if (coveringArea.PtInRect(cursorPosition)) {
+			return timeline;
+		}
+	}
 }
 
 AmanWindow::~AmanWindow() {

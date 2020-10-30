@@ -8,10 +8,8 @@
 #include <iomanip>
 #include <algorithm>
 
-AmanTimeline::AmanTimeline(std::string fix, int seconds, int resolution) {
+AmanTimeline::AmanTimeline(std::string fix) {
 	this->dual = false;
-	this->seconds = seconds;
-	this->resolution = resolution;
 	this->identifier = fix;
 
 	this->fixNames[0] = fix;
@@ -20,10 +18,8 @@ AmanTimeline::AmanTimeline(std::string fix, int seconds, int resolution) {
 	this->aircraftLists = new std::vector<AmanAircraft>[2];
 };
 
-AmanTimeline::AmanTimeline(std::string fixLeft, std::string fixRight, int seconds, int resolution) {
+AmanTimeline::AmanTimeline(std::string fixLeft, std::string fixRight) {
 	this->dual = true;
-	this->seconds = seconds;
-	this->resolution = resolution;
 	this->identifier = fixLeft + "/" + fixRight;
 
 	this->fixNames[0] = fixRight;
@@ -32,36 +28,60 @@ AmanTimeline::AmanTimeline(std::string fixLeft, std::string fixRight, int second
 	this->aircraftLists = new std::vector<AmanAircraft>[2];
 };
 
-void AmanTimeline::render(CRect clientRect, HDC hdc, int column) {
+CRect AmanTimeline::getArea(CRect clientRect, int xOffset) {
+	int totalWidth;
+
+	if (this->dual) {
+		totalWidth = AMAN_WIDTH * 2 - AMAN_TIMELINE_WIDTH;
+	}
+	else {
+		totalWidth = AMAN_WIDTH;
+	}
+
+	return CRect(
+		xOffset,
+		AMAN_TITLEBAR_HEIGHT, 
+		xOffset + totalWidth,
+		clientRect.bottom
+	);
+}
+
+void AmanTimeline::zoom(int value) {
+	this->seconds = value;
+}
+
+CRect AmanTimeline::render(CRect clientRect, HDC hdc, int offset) {
+	CRect myTotalArea = getArea(clientRect, offset);
+
 	long int now = static_cast<long int> (std::time(nullptr));			// Current UNIX-timestamp in seconds
 	int minutesNow = (now / 60 + 1);									// UNIX time in minutes
 
-	int xOffset = column * AMAN_WIDTH;
+	int timelineStartX = myTotalArea.left;
 	if (this->dual) {
-		xOffset -= AMAN_TIMELINE_WIDTH;
+		timelineStartX += AMAN_WIDTH - AMAN_TIMELINE_WIDTH;
 	}
 
 	// Window size-dependent calculations
-	int topHeight = clientRect.top;												// Top of timeline (future) in pixels
-	int bottomHeight = clientRect.bottom - AMAN_TIMELINE_REALTIME_OFFSET;		// Bottom of timeline (now) in pixels
+	int topHeight = myTotalArea.top;												// Top of timeline (future) in pixels
+	int bottomHeight = myTotalArea.bottom - AMAN_TIMELINE_REALTIME_OFFSET;		// Bottom of timeline (now) in pixels
 	double pixelsPerSec = (float)(bottomHeight - topHeight) / (float)this->seconds;
 	double pixelsPerMin = 60.0 * pixelsPerSec;
 
 	// Timeline bar
 	int secToNextMin = 60 - (now % 60);
 
-	CRect futureBackground = { xOffset, 0, xOffset + AMAN_TIMELINE_WIDTH, clientRect.bottom };
+	CRect futureBackground = { timelineStartX, 0, timelineStartX + AMAN_TIMELINE_WIDTH, myTotalArea.bottom };
 	FillRect(hdc, &futureBackground, AMAN_BRUSH_TIMELINE_AHEAD);
-	CRect pastBackground = { xOffset, clientRect.bottom - AMAN_TIMELINE_REALTIME_OFFSET, xOffset + AMAN_TIMELINE_WIDTH, clientRect.bottom };
+	CRect pastBackground = { timelineStartX, myTotalArea.bottom - AMAN_TIMELINE_REALTIME_OFFSET, timelineStartX + AMAN_TIMELINE_WIDTH, myTotalArea.bottom };
 	FillRect(hdc, &pastBackground, AMAN_BRUSH_TIMELINE_PAST);
 	
 	// Vertical white border(s)
 	HPEN oldPen = (HPEN)SelectObject(hdc, AMAN_VERTICAL_LINE_PEN);
-	MoveToEx(hdc, xOffset + AMAN_TIMELINE_WIDTH, clientRect.bottom, NULL);
-	LineTo(hdc, xOffset + AMAN_TIMELINE_WIDTH, clientRect.top);
+	MoveToEx(hdc, timelineStartX + AMAN_TIMELINE_WIDTH, myTotalArea.bottom, NULL);
+	LineTo(hdc, timelineStartX + AMAN_TIMELINE_WIDTH, myTotalArea.top);
 	if (dual) {
-		MoveToEx(hdc, xOffset, clientRect.bottom, NULL);
-		LineTo(hdc, xOffset, clientRect.top);
+		MoveToEx(hdc, timelineStartX, myTotalArea.bottom, NULL);
+		LineTo(hdc, timelineStartX, myTotalArea.top);
 	}
 
 	// Render minute ticks with times
@@ -75,39 +95,41 @@ void AmanTimeline::render(CRect clientRect, HDC hdc, int column) {
 	for (int min = 0; min < this->seconds/60; min++) {
 		int linePos = nextMinutePosition - (min * pixelsPerMin);
 		int minAtLine = (nextMinute + min) % 60;
-		std::stringstream timeStr;
+		
 
 		int tickLength = 4;
 		if (minAtLine % 5 == 0) {
 			tickLength = 8;
 		}
-
-		if (minAtLine % 10 == 0) { 
-			// 10 minute tick
+		std::stringstream timeSs;
+		if (minAtLine % 10 == 0) {
+			// 10 minute label
 			int hoursAtLine = ((minutesNow + min) / 60) % 24;
-			timeStr << std::setfill('0') << std::setw(2) << hoursAtLine << ":" << std::setw(2) << minAtLine;
-			CRect rect = { xOffset, linePos - 6, xOffset + AMAN_TIMELINE_WIDTH, linePos + 6 };
-			DrawText(hdc, timeStr.str().c_str(), strlen(timeStr.str().c_str()), &rect, DT_CENTER);
-		} else {
-			// 1 minute tick
-			timeStr << std::setfill('0') << std::setw(2) << minAtLine;
-			CRect rect = { xOffset, linePos - 6, xOffset + AMAN_TIMELINE_WIDTH, linePos + 6 };
-			DrawText(hdc, timeStr.str().c_str(), strlen(timeStr.str().c_str()), &rect, DT_CENTER);
+			timeSs << std::setfill('0') << std::setw(2) << hoursAtLine << ":" << std::setw(2) << minAtLine;
+		} else if (minAtLine % 5 == 0 || pixelsPerMin > 15) {
+			// 5 and 1 minute label
+			timeSs << std::setfill('0') << std::setw(2) << minAtLine;
 		}
 
-		MoveToEx(hdc, xOffset + AMAN_TIMELINE_WIDTH, linePos, NULL);
-		LineTo(hdc, xOffset + AMAN_TIMELINE_WIDTH - tickLength, linePos);
+		auto timeString = timeSs.str();
+		if (!timeString.empty()) {
+			CRect rect = { timelineStartX, linePos - 6, timelineStartX + AMAN_TIMELINE_WIDTH, linePos + 6 };
+			DrawText(hdc, timeString.c_str(), strlen(timeString.c_str()), &rect, DT_CENTER);
+		}
+
+		MoveToEx(hdc, timelineStartX + AMAN_TIMELINE_WIDTH, linePos, NULL);
+		LineTo(hdc, timelineStartX + AMAN_TIMELINE_WIDTH - tickLength, linePos);
 		if (this->dual) {
-			MoveToEx(hdc, xOffset, linePos, NULL);
-			LineTo(hdc, xOffset + tickLength, linePos);
+			MoveToEx(hdc, timelineStartX, linePos, NULL);
+			LineTo(hdc, timelineStartX + tickLength, linePos);
 		}
 	}
 
 	// Draw aircraft
 	SelectObject(hdc, AMAN_LABEL_FONT);
-	drawAircraftChain(hdc, now, xOffset, bottomHeight, pixelsPerSec, false, this->aircraftLists[0]);
+	drawAircraftChain(hdc, now, timelineStartX, bottomHeight, pixelsPerSec, false, this->aircraftLists[0]);
 	if (this->dual) {
-		drawAircraftChain(hdc, now, xOffset, bottomHeight, pixelsPerSec, true, this->aircraftLists[1]);
+		drawAircraftChain(hdc, now, timelineStartX, bottomHeight, pixelsPerSec, true, this->aircraftLists[1]);
 	}
 	
 	// Draw the fix id
@@ -115,7 +137,7 @@ void AmanTimeline::render(CRect clientRect, HDC hdc, int column) {
 	SetBkMode(hdc, OPAQUE);
 	SetTextColor(hdc, AMAN_COLOR_FIX_TEXT);
 	SelectObject(hdc, AMAN_FIX_FONT);
-	CRect rect = { xOffset - AMAN_TIMELINE_WIDTH, clientRect.bottom - 20, xOffset + 2*AMAN_TIMELINE_WIDTH, clientRect.bottom };
+	CRect rect = { timelineStartX - AMAN_TIMELINE_WIDTH, myTotalArea.bottom - 20, timelineStartX + 2*AMAN_TIMELINE_WIDTH, myTotalArea.bottom };
 	std::string text = this->dual ? this->fixNames[1] + "/" + this->fixNames[0] : this->fixNames[0];
 	DrawText(hdc, text.c_str(), text.length(), &rect, DT_CENTER);
 
@@ -125,6 +147,8 @@ void AmanTimeline::render(CRect clientRect, HDC hdc, int column) {
 	SelectObject(hdc, oldPen);
 	SetBkMode(hdc, oldBackground);
 	SetBkColor(hdc, oldBackgroundColor);
+
+	return myTotalArea;
 }
 
 void AmanTimeline::drawAircraftChain(HDC hdc, int timeNow, int xStart, int yStart, float pixelsPerSec, bool left, std::vector<AmanAircraft> aircraftList) {

@@ -58,20 +58,20 @@ void TitleBar::render(CRect clientRect, HDC memdc) {
 void TitleBar::mouseHover(CRect clientRect, CPoint cursorPosition) {
 	if (PtInRect(&this->resizeButton.rect, cursorPosition)) {
 		this->resizeButton.hovered = true;
-		controller->requestRepaint();
+		controller->timelinesUpdated();
 	}
 	else {
 		this->resizeButton.hovered = false;
-		controller->requestRepaint();
+		controller->timelinesUpdated();
 	}
 
 	if (PtInRect(&this->closeButton.rect, cursorPosition)) {
 		this->closeButton.hovered = true;
-		controller->requestRepaint();
+		controller->timelinesUpdated();
 	}
 	else {
 		this->closeButton.hovered = false;
-		controller->requestRepaint();
+		controller->timelinesUpdated();
 	}
 }
 

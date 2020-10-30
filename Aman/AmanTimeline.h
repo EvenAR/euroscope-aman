@@ -6,8 +6,7 @@ class AmanAircraft;
 class AmanTimeline
 {
 private:
-	int seconds;
-	int resolution;
+	int seconds = 3600;
 	std::string identifier;
 
 	void drawAircraftChain(HDC hdc, int timeNow, int xStart, int yStart, float pixelsPerSec, bool left, std::vector<AmanAircraft> aircraftList);
@@ -17,16 +16,18 @@ private:
 	std::vector<AmanAircraft>* aircraftLists;
 
 public:
-	AmanTimeline(std::string fix, int seconds, int resolution);
-	AmanTimeline(std::string fixLeft, std::string fixRight, int seconds, int resolution);
+	AmanTimeline(std::string fix);
+	AmanTimeline(std::string fixLeft, std::string fixRight);
 
 	std::vector<AmanAircraft>* getAircraftList() { return aircraftLists; }
 	std::string getIdentifier() { return identifier; }
 	std::string* getFixNames() { return fixNames; }
 	int getLength() { return seconds; }
-	int getInterval() { return resolution; }
 	bool isDual() { return dual; }
+	void zoom(int value);
 
-	void render(CRect clientRect, HDC memdc, int i);
+	CRect render(CRect clientRect, HDC memdc, int offset);
+
+	CRect getArea(CRect clientRect, int i);
 };
 
