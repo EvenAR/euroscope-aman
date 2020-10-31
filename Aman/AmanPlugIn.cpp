@@ -66,10 +66,12 @@ AmanPlugIn::~AmanPlugIn()
 std::vector<AmanAircraft> AmanPlugIn::getAllInbounds(const char* fixName) {
 	long int timeNow = static_cast<long int> (std::time(nullptr));			// Current UNIX-timestamp in seconds
 
+	CRadarTarget asel = pMyPlugIn->RadarTargetSelectASEL();
 	CRadarTarget rt;
 	std::vector<AmanAircraft> aircraftList;
 	for (rt = pMyPlugIn->RadarTargetSelectFirst(); rt.IsValid(); rt = pMyPlugIn->RadarTargetSelectNext(rt)) {
 		float groundSpeed = rt.GetPosition().GetReportedGS();
+		bool isSelectedAircraft = asel.IsValid() && rt.GetCallsign() == asel.GetCallsign();
 
 		if (rt.GetPosition().GetReportedGS() < 60) {
 			continue;
@@ -117,11 +119,12 @@ std::vector<AmanAircraft> AmanPlugIn::getAllInbounds(const char* fixName) {
 					rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetAircraftFPType(),
 					rt.GetCorrelatedFlightPlan().GetControllerAssignedData().GetDirectToPointName(),
 					rt.GetCorrelatedFlightPlan().GetTrackingControllerIsMe(),
+					isSelectedAircraft,
 					rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetAircraftWtc(),
 					timeNow + timeToFix - rt.GetPosition().GetReceivedTime(),
 					findRemainingDist(rt, fixId),
 					0
-					});
+				});
 			}
 		}
 	}
@@ -140,16 +143,8 @@ std::vector<AmanAircraft> AmanPlugIn::getAllInbounds(const char* fixName) {
 }
 
 void AmanPlugIn::OnTimer(int Counter) {
-	for (int i = 0; i < timelines.size(); i++) {
-		auto aircraftLists = timelines.at(i)->getAircraftList();
-		auto fixNames = timelines.at(i)->getFixNames();
-
-		aircraftLists[0] = getAllInbounds(fixNames[0].c_str());
-		if (timelines.at(i)->isDual()) {
-			aircraftLists[1] = getAllInbounds(fixNames[1].c_str());
-		}
-	}
-	amanController->timelinesUpdated();
+	// Runs every second
+	amanController->dataUpdated();
 }
 
 bool AmanPlugIn::OnCompileCommand(const char * sCommandLine) {
@@ -204,7 +199,7 @@ bool AmanPlugIn::OnCompileCommand(const char * sCommandLine) {
 		}
 	}
 	if (timelinesChanged) {
-		amanController->timelinesUpdated();
+		amanController->dataUpdated();
 		this->saveToSettings();
 	}
 	
@@ -249,6 +244,15 @@ double AmanPlugIn::findRemainingDist(CRadarTarget radarTarget, int fixIndex) {
 }
 
 std::vector<AmanTimeline*>* AmanPlugIn::getTimelines() {
+	for (int i = 0; i < timelines.size(); i++) {
+		auto aircraftLists = timelines.at(i)->getAircraftList();
+		auto fixNames = timelines.at(i)->getFixNames();
+
+		aircraftLists[0] = getAllInbounds(fixNames[0].c_str());
+		if (timelines.at(i)->isDual()) {
+			aircraftLists[1] = getAllInbounds(fixNames[1].c_str());
+		}
+	}
 	return &timelines;
 }
 
@@ -282,7 +286,7 @@ void __declspec (dllexport) EuroScopePlugInInit(EuroScopePlugIn::CPlugIn ** ppPl
 
 	amanController = new AmanController(pMyPlugIn);
 	amanController->openWindow();
-	amanController->timelinesUpdated();
+	amanController->dataUpdated();
 }
 
 void __declspec (dllexport) EuroScopePlugInExit(void) {

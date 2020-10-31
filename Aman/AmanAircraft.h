@@ -7,6 +7,7 @@ public:
 	const char* icaoType;
 	const char* nextFix;
 	bool trackedByMe;
+	bool isSelected;
 	char wtc;
 	int eta;
 	double distLeft;

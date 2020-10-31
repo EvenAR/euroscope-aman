@@ -186,19 +186,20 @@ void AmanTimeline::drawAircraftChain(HDC hdc, int timeNow, int xStart, int yStar
 			<< std::right << std::setfill(' ') << std::setw(4)
 			<< round(aircraft.distLeft);
 
-		oldTextColor = SetTextColor(hdc, AMAN_COLOR_AIRCRAFT_LABEL);
 		if (aircraft.trackedByMe) {
 			SelectObject(hdc, AMAN_WHITE_PEN);
 			SelectObject(hdc, AMAN_TRACKED_BRUSH);
+			oldTextColor = SetTextColor(hdc, AMAN_COLOR_TRACKED);
 		}
 		else {
 			SelectObject(hdc, AMAN_GRAY_PEN);
 			SelectObject(hdc, AMAN_UNTRACKED_BRUSH);
+			oldTextColor = SetTextColor(hdc, AMAN_COLOR_UNTRACKED);
 		}
 
 		// Left side of timeline
 		if (left) {
-			int rectLeft = xStart - AMAN_WIDTH;
+			int rectLeft = xStart - AMAN_WIDTH + AMAN_TIMELINE_WIDTH + AMAN_LABEL_SEP_FROM_TIMELINE;
 			int rectTop = acPos - AMAN_AIRCRAFT_LINE_HEIGHT / 2;
 			int rectRight = xStart - AMAN_LABEL_SEP_FROM_TIMELINE;
 			int rectBottom = acPos + AMAN_AIRCRAFT_LINE_HEIGHT / 2;
@@ -221,7 +222,7 @@ void AmanTimeline::drawAircraftChain(HDC hdc, int timeNow, int xStart, int yStar
 		else {
 			int rectLeft = xStart + AMAN_TIMELINE_WIDTH + AMAN_LABEL_SEP_FROM_TIMELINE;
 			int rectTop = acPos - AMAN_AIRCRAFT_LINE_HEIGHT / 2 + offset;
-			int rectRight = xStart + AMAN_TIMELINE_WIDTH + AMAN_LABEL_SEP_FROM_TIMELINE + AMAN_WIDTH;
+			int rectRight = xStart + AMAN_WIDTH - AMAN_LABEL_SEP_FROM_TIMELINE;
 			int rectBottom = acPos + AMAN_AIRCRAFT_LINE_HEIGHT / 2 + offset;
 
 			if (prevTop >= 0 && rectBottom > prevTop) {
@@ -238,7 +239,15 @@ void AmanTimeline::drawAircraftChain(HDC hdc, int timeNow, int xStart, int yStar
 
 			prevTop = rectTop;
 		}
+
 		DrawText(hdc, acStr.str().c_str(), strlen(acStr.str().c_str()), &rect, left ? DT_RIGHT : DT_LEFT);
+
+		if (aircraft.isSelected) {
+			rect.InflateRect(2, 2);
+			FrameRect(hdc, rect, aircraft.trackedByMe ? AMAN_TRACKED_BRUSH : AMAN_UNTRACKED_BRUSH);
+		}
+
+		prevTop -= AMAN_AIRCRAFT_LINE_SEPARATION;
 		SetTextColor(hdc, oldTextColor);
 	}
 }

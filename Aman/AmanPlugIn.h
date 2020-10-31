@@ -21,6 +21,7 @@ public:
 	AmanPlugIn();
 	virtual ~AmanPlugIn();
 
+	// EuroScope events:
 	virtual void OnTimer(int Counter);
 	virtual bool OnCompileCommand(const char * sCommandLine);
 

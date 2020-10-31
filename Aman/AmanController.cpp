@@ -18,7 +18,7 @@ void AmanController::openWindow() {
 	}
 }
 
-void AmanController::timelinesUpdated() {
+void AmanController::dataUpdated() {
 	if (this->amanWindow != NULL) {
 		this->amanWindow->render();
 	}
@@ -67,7 +67,7 @@ void AmanController::mouseWheelSrolled(CPoint cursorPosition, short delta) {
 
 		if (!limitReached) {
 			timeline->zoom(newZoom);
-			timelinesUpdated();
+			dataUpdated();
 		}
 	}
 }

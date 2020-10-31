@@ -27,7 +27,7 @@ public:
 	void mouseReleased(CRect windowRect, CPoint cursorPosition);
 	void mouseMoved(CRect windowRect, CPoint cursorPosition);
 	void mouseWheelSrolled(CPoint cursorPosition, short delta);
-	void timelinesUpdated();
+	void dataUpdated();
 
 	void resizebuttonPressed();
 	void titleBarPressed();
