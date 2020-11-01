@@ -8,10 +8,10 @@ The AMAN-display will appear in a separate window once the plugin has been loade
 ### Add a timeline
 * `.aman add WAYPT1` adds a timeline for a single waypoint.
 * `.aman add WAYPT1/WAYPT2` adds a timeline shared by two waypoints, where aircraft inbound for `WAYPT1` are shown on the left side and inbounds to `WAYPT2` are shown on the right side.
-* `.aman add WAYPT1 30` adds a timeline showing a 30 minute large window (default is 60 minutes).
 
 ### Remove a timeline
 * `.aman del WAYPT1` or `.aman del WAYPT1/WAYPT2`
+* `.aman clear` removes all timelines
 
 ## Download
 - Note: This is an early version of the plugin. It is recommended to load the plugin in a secondary instance of EuroScope (connected to VATSIM via proxy) in case the plugin causes EuroScope to crash.
