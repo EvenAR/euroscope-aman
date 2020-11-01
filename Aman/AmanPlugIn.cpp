@@ -128,11 +128,11 @@ std::vector<AmanAircraft> AmanPlugIn::getAllInbounds(const char* fixName) {
 	if (aircraftList.size() > 0) {
 		std::sort(aircraftList.begin(), aircraftList.end());
 		std::reverse(aircraftList.begin(), aircraftList.end());
-		for (int i = 0; i < aircraftList.size() - 1; i++) {
+		for (int i = 1; i < aircraftList.size(); i++) {
 			AmanAircraft* curr = &aircraftList[i];
-			AmanAircraft* next = &aircraftList[i + 1];
+			AmanAircraft* prev = &aircraftList[i - 1];
 
-			curr->timeToNextAircraft = curr->eta - next->eta;
+			curr->timeToNextAircraft = prev->eta - curr->eta;
 		}
 	}
 	
