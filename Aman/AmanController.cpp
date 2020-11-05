@@ -3,6 +3,7 @@
 #include "AmanWindow.h"
 #include "AmanPlugIn.h"
 #include "AmanTimeline.h"
+#include "AmanTimelineView.h"
 
 AmanController::AmanController(AmanPlugIn* plugin) {
 	this->amanPlugin = plugin;
@@ -18,9 +19,9 @@ void AmanController::openWindow() {
 	}
 }
 
-void AmanController::dataUpdated() {
+void AmanController::dataUpdated(std::vector<AmanTimeline*>* timelines) {
 	if (this->amanWindow != NULL) {
-		this->amanWindow->render();
+		this->amanWindow->update(timelines);
 	}
 }
 
@@ -59,15 +60,16 @@ void AmanController::mouseMoved(CRect windowRect, CPoint cursorPosition) {
 }
 
 void AmanController::mouseWheelSrolled(CPoint cursorPosition, short delta) {
-	auto timeline = this->amanWindow->getTimelineAt(cursorPosition);
+	auto allTimelines = this->amanPlugin->getTimelines();
+	auto timeline = this->amanWindow->getTimelineAt(allTimelines, cursorPosition);
 	if (timeline) {
-		auto currentZoom = timeline->getLength();
+		auto currentZoom = timeline->getRange();
 		auto newZoom = currentZoom - delta;
 		auto limitReached = newZoom < 60 * 5 || newZoom > 3600 * 3;
 
 		if (!limitReached) {
-			timeline->zoom(newZoom);
-			dataUpdated();
+			timeline->setRange(newZoom);
+			dataUpdated(allTimelines);
 		}
 	}
 }

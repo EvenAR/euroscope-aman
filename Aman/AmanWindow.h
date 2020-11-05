@@ -8,6 +8,7 @@
 
 class AmanController;
 class AmanTimeline;
+class AmanRenderer;
 
 class AmanWindow
 {
@@ -16,17 +17,17 @@ public:
 	AmanWindow(AmanController* controller);
 	~AmanWindow();
 
-	void render();
+	void update(std::vector<AmanTimeline*>* timelines);
 	void setWindowPosition(CRect rect);
 	void collapse();
 	void expand();
-	AmanTimeline* getTimelineAt(CPoint cursorPosition);
+	AmanTimeline* getTimelineAt(std::vector<AmanTimeline*>* timelines, CPoint cursorPosition);
 
 private:	
 	DWORD threadId;
 
-	static LRESULT CALLBACK windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 	static void drawContent(HWND hwnd);
+	static LRESULT CALLBACK windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 	static DWORD WINAPI threadProc(LPVOID lpParam);
 	static void close(HINSTANCE inj_hModule, HWND hwnd);
 	static void mouseHover(CRect windowRect, CPoint cursorPosition);

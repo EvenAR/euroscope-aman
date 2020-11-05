@@ -189,6 +189,7 @@
     <ClCompile Include="AmanController.cpp" />
     <ClCompile Include="AmanPlugIn.cpp" />
     <ClCompile Include="AmanTimeline.cpp" />
+    <ClCompile Include="AmanTimelineView.cpp" />
     <ClCompile Include="AmanWindow.cpp" />
     <ClCompile Include="TitleBar.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -209,6 +210,7 @@
     <ClInclude Include="AmanController.h" />
     <ClInclude Include="AmanPlugIn.h" />
     <ClInclude Include="AmanTimeline.h" />
+    <ClInclude Include="AmanTimelineView.h" />
     <ClInclude Include="AmanWindow.h" />
     <ClInclude Include="Constants.h" />
     <ClInclude Include="TitleBar.h" />

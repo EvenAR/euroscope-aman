@@ -1,5 +1,7 @@
 #pragma once
 #include <vector>
+#include <string>
+#include "AmanAircraft.h"
 
 class AmanAircraft;
 
@@ -8,10 +10,10 @@ class AmanTimeline
 private:
 	int seconds = 3600;
 	std::string identifier;
+	bool dual;
 
 	void drawAircraftChain(HDC hdc, int timeNow, int xStart, int yStart, float pixelsPerSec, bool left, std::vector<AmanAircraft> aircraftList);
 
-	bool dual;
 	std::string fixNames[2];
 	std::vector<AmanAircraft>* aircraftLists;
 
@@ -22,12 +24,11 @@ public:
 	std::vector<AmanAircraft>* getAircraftList() { return aircraftLists; }
 	std::string getIdentifier() { return identifier; }
 	std::string* getFixNames() { return fixNames; }
-	int getLength() { return seconds; }
+
 	bool isDual() { return dual; }
-	void zoom(int value);
+	int getRange() { return seconds; }
+	void setRange(int seconds) { this->seconds = seconds; };
 
-	CRect render(CRect clientRect, HDC memdc, int offset);
-
-	CRect getArea(CRect clientRect, int i);
+	~AmanTimeline();
 };
 

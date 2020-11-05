@@ -2,7 +2,7 @@
 
 #include "AmanPlugIn.h"
 #include "AmanController.h"
-#include "AmanTimeline.h"
+#include "AmanTimelineView.h"
 #include "AmanWindow.h"		
 #include "Constants.h"
 #include "TitleBar.h"
@@ -11,10 +11,14 @@
 #include <sstream>
 #include <iomanip>
 #include <mutex>
+#include <condition_variable>
 
 AmanController* gpController;
+std::vector<AmanTimeline*>* gTimelinesCache;
 
 std::mutex timelineDataMutex;
+std::condition_variable cv;
+
 HINSTANCE  hInstance;
 CPoint position;
 HWND hwnd;
@@ -31,9 +35,13 @@ AmanWindow::AmanWindow(AmanController* controller) {
 	CreateThread(0, NULL, AmanWindow::threadProc, NULL, NULL, &threadId);
 }
 
-void AmanWindow::render() {
+void AmanWindow::update(std::vector<AmanTimeline*>* timelines) {
+	timelineDataMutex.lock();
+	gTimelinesCache = timelines;
+	timelineDataMutex.unlock();
+
 	// Tell the window that new aircraft data is available
-	PostThreadMessage(threadId, AIRCRAFT_DATA, NULL, NULL);
+	PostThreadMessage(threadId, AIRCRAFT_DATA, 0, reinterpret_cast<LPARAM>(timelines));
 }
 
 void AmanWindow::setWindowPosition(CRect rect) {
@@ -149,6 +157,7 @@ LRESULT CALLBACK AmanWindow::windowProc(HWND hwnd, UINT message, WPARAM wParam, 
 		}
 		break;
 	case WM_PAINT: {
+			InvalidateRect(hwnd, NULL, FALSE);
 			AmanWindow::drawContent(hwnd);
 		}
 		break;
@@ -188,7 +197,7 @@ LRESULT CALLBACK AmanWindow::windowProc(HWND hwnd, UINT message, WPARAM wParam, 
 	return 0;
 }
 
-void AmanWindow::drawContent(HWND hwnd) {	
+void AmanWindow::drawContent(HWND hwnd) {
 	CRect clientRect;
 	int winWidth, winHeight;
 
@@ -209,10 +218,14 @@ void AmanWindow::drawContent(HWND hwnd) {
 	// Draw tools
 	FillRect(memdc, &clientRect, AMAN_BRUSH_MAIN_BACKGROUND);
 
-	CRect rectangle;
-	for (AmanTimeline* timeline : *gpController->getTimelines()) {
-		 rectangle = timeline->render(clientRect, memdc, rectangle.right);
+	timelineDataMutex.lock();
+	if (gTimelinesCache) {
+		CRect rectangle;
+		for (AmanTimeline* timeline : *gTimelinesCache) {
+			rectangle = AmanTimelineView::render(timeline, clientRect, memdc, rectangle.right);
+		}
 	}
+	timelineDataMutex.unlock();
 	
 	// Menu
 	titleBar->render(clientRect, memdc);
@@ -224,14 +237,14 @@ void AmanWindow::drawContent(HWND hwnd) {
 	EndPaint(hwnd, &ps);	
 }
 
-AmanTimeline* AmanWindow::getTimelineAt(CPoint cursorPosition) {
+AmanTimeline* AmanWindow::getTimelineAt(std::vector<AmanTimeline*>* timelines, CPoint cursorPosition) {
 	CRect windowRect;
 	GetWindowRect(hwnd, &windowRect);
 	ScreenToClient(hwnd, &cursorPosition);
 
 	CRect coveringArea;
-	for (AmanTimeline* timeline : *gpController->getTimelines()) {
-		coveringArea = timeline->getArea(windowRect, coveringArea.right);
+	for (AmanTimeline* timeline : *timelines) {
+		coveringArea = AmanTimelineView::getArea(timeline, windowRect, coveringArea.right);
 		if (coveringArea.PtInRect(cursorPosition)) {
 			return timeline;
 		}

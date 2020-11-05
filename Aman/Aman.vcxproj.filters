@@ -30,10 +30,13 @@
     <ClCompile Include="AmanController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AmanTimeline.cpp">
+    <ClCompile Include="TitleBar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TitleBar.cpp">
+    <ClCompile Include="AmanTimelineView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AmanTimeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -73,13 +76,16 @@
     <ClInclude Include="AmanAircraft.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AmanTimeline.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TitleBar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AmanTimelineView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AmanTimeline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

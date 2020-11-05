@@ -144,7 +144,7 @@ std::vector<AmanAircraft> AmanPlugIn::getAllInbounds(const char* fixName) {
 
 void AmanPlugIn::OnTimer(int Counter) {
 	// Runs every second
-	amanController->dataUpdated();
+	amanController->dataUpdated(getTimelines());
 }
 
 bool AmanPlugIn::OnCompileCommand(const char * sCommandLine) {
@@ -199,7 +199,7 @@ bool AmanPlugIn::OnCompileCommand(const char * sCommandLine) {
 		}
 	}
 	if (timelinesChanged) {
-		amanController->dataUpdated();
+		amanController->dataUpdated(getTimelines());
 		this->saveToSettings();
 	}
 	
@@ -273,7 +273,7 @@ void AmanPlugIn::saveToSettings() {
 		auto id = timeline->getIdentifier();
 		ss << timeline->getIdentifier()
 			<< SETTINGS_PARAM_DELIMITER
-			<< timeline->getLength()
+			<< timeline->getRange()
 			<< SETTINGS_PARAM_DELIMITER;
 	}
 	ss.seekp(-1, std::ios_base::end);	// remove last delimieter
@@ -286,7 +286,7 @@ void __declspec (dllexport) EuroScopePlugInInit(EuroScopePlugIn::CPlugIn ** ppPl
 
 	amanController = new AmanController(pMyPlugIn);
 	amanController->openWindow();
-	amanController->dataUpdated();
+	amanController->dataUpdated(pMyPlugIn->getTimelines());
 }
 
 void __declspec (dllexport) EuroScopePlugInExit(void) {

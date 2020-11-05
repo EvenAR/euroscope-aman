@@ -27,7 +27,7 @@ public:
 	void mouseReleased(CRect windowRect, CPoint cursorPosition);
 	void mouseMoved(CRect windowRect, CPoint cursorPosition);
 	void mouseWheelSrolled(CPoint cursorPosition, short delta);
-	void dataUpdated();
+	void dataUpdated(std::vector<AmanTimeline*>* timelines);
 
 	void resizebuttonPressed();
 	void titleBarPressed();
