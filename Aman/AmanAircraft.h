@@ -15,7 +15,7 @@ public:
 	char wtc;
 	int eta;
 	double distLeft;
-	int timeToNextAircraft;
+	int secondsBehindPreceeding;
 
 	bool operator< (const AmanAircraft &other) const {
 		return eta < other.eta;

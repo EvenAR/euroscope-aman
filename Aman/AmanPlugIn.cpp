@@ -137,7 +137,7 @@ std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixNa
 			AmanAircraft* curr = &aircraftList[i];
 			AmanAircraft* next = &aircraftList[i + 1];
 
-			curr->timeToNextAircraft = curr->eta - next->eta;
+			curr->secondsBehindPreceeding = curr->eta - next->eta;
 		}
 	}
 	

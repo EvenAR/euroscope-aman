@@ -232,7 +232,7 @@ void AmanTimelineView::drawAircraftChain(HDC hdc, int timeNow, int xStart, int y
 			nextFix = aircraft.nextFix.c_str();
 		}
 
-		int minutesBehindPreceeding = round(aircraft.timeToNextAircraft / 60);
+		int minutesBehindPreceeding = round(aircraft.secondsBehindPreceeding / 60);
 		int remainingDistance = round(aircraft.distLeft);
 
 		drawMultiColorTextLine(hdc, rect, {
