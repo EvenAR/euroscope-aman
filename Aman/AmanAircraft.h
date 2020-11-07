@@ -6,6 +6,8 @@ public:
 	const char* arrivalRunway;
 	const char* icaoType;
 	const char* nextFix;
+	int viaFixIndex;
+
 	bool trackedByMe;
 	bool isSelected;
 	char wtc;

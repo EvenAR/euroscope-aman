@@ -10,10 +10,12 @@ class AmanTimeline;
 
 class AmanPlugIn : public CPlugIn {
 private:
-	int getFixIndexByName(CRadarTarget radarTarget, const char* fixName);
-	double findRemainingDist(CRadarTarget radarTarget, int fixIndex);
-	std::vector<AmanAircraft> getAllInbounds(const char* fixName);
-	void addTimeline(std::string id);
+	int getFixIndexByName(CFlightPlanExtractedRoute extractedRoute, const std::string& fixName);
+	int getFirstViaFixIndex(CFlightPlanExtractedRoute extractedRoute, std::vector<std::string> viaFixes);
+	double findRemainingDist(CRadarTarget radarTarget, CFlightPlanExtractedRoute extractedRoute, int fixIndex);
+
+	std::vector<AmanAircraft> getInboundsForFix(const std::string& fixName, std::vector<std::string> viaFixes);
+	void addTimeline(std::string id, std::string viaFixes);
 	void saveToSettings();
 
 	static std::vector<std::string> splitString(std::string string, const char delim);
@@ -26,5 +28,6 @@ public:
 	virtual bool OnCompileCommand(const char * sCommandLine);
 
 	std::vector<AmanTimeline*>* getTimelines();
+	std::vector<AmanTimeline*>* getTimelineForFix();
 };
 

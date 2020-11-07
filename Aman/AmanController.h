@@ -32,7 +32,6 @@ public:
 	void resizebuttonPressed();
 	void titleBarPressed();
 	void collapseButtonPressed();
-	std::vector<AmanTimeline*>* getTimelines();
 
 	~AmanController();
 };

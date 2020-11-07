@@ -7,6 +7,21 @@ class AmanAircraft;
 
 class AmanTimeline
 {
+public:
+	AmanTimeline(std::string fix, std::vector<std::string> viaFixes);
+	AmanTimeline(std::string fixLeft, std::string fixRight, std::vector<std::string> viaFixes);
+
+	std::vector<AmanAircraft>* getAircraftLists() { return aircraftLists; }
+	std::string getIdentifier() { return identifier; }
+	std::string* getFixNames() { return fixNames; }
+	std::vector<std::string> getViaFixes() { return viaFixes; }
+
+	bool isDual() { return dual; }
+	int getRange() { return seconds; }
+	void setRange(int seconds) { this->seconds = seconds; };
+
+	~AmanTimeline();
+
 private:
 	int seconds = 3600;
 	std::string identifier;
@@ -16,19 +31,7 @@ private:
 
 	std::string fixNames[2];
 	std::vector<AmanAircraft>* aircraftLists;
+	std::vector<std::string> viaFixes;
 
-public:
-	AmanTimeline(std::string fix);
-	AmanTimeline(std::string fixLeft, std::string fixRight);
-
-	std::vector<AmanAircraft>* getAircraftList() { return aircraftLists; }
-	std::string getIdentifier() { return identifier; }
-	std::string* getFixNames() { return fixNames; }
-
-	bool isDual() { return dual; }
-	int getRange() { return seconds; }
-	void setRange(int seconds) { this->seconds = seconds; };
-
-	~AmanTimeline();
 };
 

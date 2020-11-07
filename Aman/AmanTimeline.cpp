@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "AmanTimeline.h"
 
-AmanTimeline::AmanTimeline(std::string fix) {
+AmanTimeline::AmanTimeline(std::string fix, std::vector<std::string> viaFixes) {
 	this->dual = false;
 	this->identifier = fix;
 
@@ -9,9 +9,10 @@ AmanTimeline::AmanTimeline(std::string fix) {
 	this->fixNames[1] = "";
 
 	this->aircraftLists = new std::vector<AmanAircraft>[2];
+	this->viaFixes = viaFixes;
 };
 
-AmanTimeline::AmanTimeline(std::string fixLeft, std::string fixRight) {
+AmanTimeline::AmanTimeline(std::string fixLeft, std::string fixRight, std::vector<std::string> viaFixes) {
 	this->dual = true;
 	this->identifier = fixLeft + "/" + fixRight;
 
@@ -19,6 +20,7 @@ AmanTimeline::AmanTimeline(std::string fixLeft, std::string fixRight) {
 	this->fixNames[1] = fixLeft;
 
 	this->aircraftLists = new std::vector<AmanAircraft>[2];
+	this->viaFixes = viaFixes;
 };
 
 AmanTimeline::~AmanTimeline()

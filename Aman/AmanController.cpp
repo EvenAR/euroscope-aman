@@ -5,6 +5,9 @@
 #include "AmanTimeline.h"
 #include "AmanTimelineView.h"
 
+#define THREE_HOURS 10800
+#define FIVE_MINUTES 300
+
 AmanController::AmanController(AmanPlugIn* plugin) {
 	this->amanPlugin = plugin;
 	this->amanWindow = NULL;
@@ -14,19 +17,12 @@ void AmanController::openWindow() {
 	if (this->amanWindow == NULL) {
 		this->amanWindow = new AmanWindow(this);
 	}
-	else {
-
-	}
 }
 
 void AmanController::dataUpdated(std::vector<AmanTimeline*>* timelines) {
 	if (this->amanWindow != NULL) {
 		this->amanWindow->update(timelines);
 	}
-}
-
-std::vector<AmanTimeline*>* AmanController::getTimelines() {
-	return this->amanPlugin->getTimelines();
 }
 
 void AmanController::mousePressed(CRect windowRect, CPoint cursorPosition) {
@@ -61,14 +57,14 @@ void AmanController::mouseMoved(CRect windowRect, CPoint cursorPosition) {
 
 void AmanController::mouseWheelSrolled(CPoint cursorPosition, short delta) {
 	auto allTimelines = this->amanPlugin->getTimelines();
-	auto timeline = this->amanWindow->getTimelineAt(allTimelines, cursorPosition);
-	if (timeline) {
-		auto currentZoom = timeline->getRange();
-		auto newZoom = currentZoom - delta;
-		auto limitReached = newZoom < 60 * 5 || newZoom > 3600 * 3;
+	auto timelinePointedAt = this->amanWindow->getTimelineAt(allTimelines, cursorPosition);
+	if (timelinePointedAt) {
+		auto currentRange = timelinePointedAt->getRange();
+		auto newRange = currentRange - delta;
+		auto limitReached = newRange < FIVE_MINUTES || newRange > THREE_HOURS;
 
 		if (!limitReached) {
-			timeline->setRange(newZoom);
+			timelinePointedAt->setRange(newRange);
 			dataUpdated(allTimelines);
 		}
 	}

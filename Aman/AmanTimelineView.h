@@ -12,5 +12,6 @@ public:
 
 private:
 	static void drawAircraftChain(HDC hdc, int timeNow, int xStart, int yStart, float pixelsPerSec, bool left, std::vector<AmanAircraft> aircraftList);
+	static void drawMultiColorTextLine(HDC hdc, CRect rect, std::vector<std::tuple<int, bool, COLORREF, std::string>> texts);
 };
 

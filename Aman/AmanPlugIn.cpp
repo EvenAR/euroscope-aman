@@ -22,7 +22,7 @@
 
 AmanPlugIn* pMyPlugIn;
 AmanController* amanController;
-std::vector<AmanTimeline*> timelines;
+std::vector<AmanTimeline*> gTimelines;
 std::unordered_map<const char*, AmanAircraft> allAircraft;
 
 AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE,
@@ -39,7 +39,8 @@ AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE,
 			try {
 				auto timelineParams = AmanPlugIn::splitString(timeline.c_str(), SETTINGS_PARAM_DELIMITER);
 				std::string id = timelineParams.at(0);
-				this->addTimeline(id);
+				std::string vias = timelineParams.at(1);
+				this->addTimeline(id, vias);
 				this->DisplayUserMessage(
 					"AMAN", 
 					"Info",
@@ -63,7 +64,7 @@ AmanPlugIn::~AmanPlugIn()
 	delete amanController;
 }
 
-std::vector<AmanAircraft> AmanPlugIn::getAllInbounds(const char* fixName) {
+std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixName, std::vector<std::string> viaFixes) {
 	long int timeNow = static_cast<long int> (std::time(nullptr));			// Current UNIX-timestamp in seconds
 
 	CRadarTarget asel = pMyPlugIn->RadarTargetSelectASEL();
@@ -71,23 +72,22 @@ std::vector<AmanAircraft> AmanPlugIn::getAllInbounds(const char* fixName) {
 	std::vector<AmanAircraft> aircraftList;
 	for (rt = pMyPlugIn->RadarTargetSelectFirst(); rt.IsValid(); rt = pMyPlugIn->RadarTargetSelectNext(rt)) {
 		float groundSpeed = rt.GetPosition().GetReportedGS();
-		bool isSelectedAircraft = asel.IsValid() && rt.GetCallsign() == asel.GetCallsign();
-
-		if (rt.GetPosition().GetReportedGS() < 60) {
+		if (groundSpeed < 60) {
 			continue;
 		}
-
+			
 		CFlightPlanExtractedRoute route = rt.GetCorrelatedFlightPlan().GetExtractedRoute();
 		CFlightPlanPositionPredictions predictions = rt.GetCorrelatedFlightPlan().GetPositionPredictions();
+		bool isSelectedAircraft = asel.IsValid() && rt.GetCallsign() == asel.GetCallsign();
 
-		int fixId = getFixIndexByName(rt, fixName);
+		int targetFixIndex = getFixIndexByName(route, fixName);
 
-		if (fixId != -1 && route.GetPointDistanceInMinutes(fixId) > -1) {	// Target fix found and has not been passed
-			bool fixIsDestination = fixId == route.GetPointsNumber() - 1;
+		if (targetFixIndex != -1 && route.GetPointDistanceInMinutes(targetFixIndex) > -1) {	// Target fix found and has not been passed
+			bool fixIsDestination = targetFixIndex == route.GetPointsNumber() - 1;
 			int timeToFix;
 
 			if (fixIsDestination) {
-				float restDistance = predictions.GetPosition(predictions.GetPointsNumber() - 1).DistanceTo(route.GetPointPosition(fixId));
+				float restDistance = predictions.GetPosition(predictions.GetPointsNumber() - 1).DistanceTo(route.GetPointPosition(targetFixIndex));
 				timeToFix = (predictions.GetPointsNumber() - 1) * 60 + (restDistance / groundSpeed) * 60.0 * 60.0;
 			}
 			else {
@@ -98,8 +98,8 @@ std::vector<AmanAircraft> AmanPlugIn::getAllInbounds(const char* fixName) {
 				int predIndexBeforeWp = 0;
 
 				for (int p = 0; p < predictions.GetPointsNumber(); p++) {
-					float dist1 = predictions.GetPosition(p).DistanceTo(route.GetPointPosition(fixId));
-					float dist2 = predictions.GetPosition(p + 1).DistanceTo(route.GetPointPosition(fixId));
+					float dist1 = predictions.GetPosition(p).DistanceTo(route.GetPointPosition(targetFixIndex));
+					float dist2 = predictions.GetPosition(p + 1).DistanceTo(route.GetPointPosition(targetFixIndex));
 
 					if (dist1 + dist2 < minScore) {
 						min1dist = dist1;
@@ -118,11 +118,12 @@ std::vector<AmanAircraft> AmanPlugIn::getAllInbounds(const char* fixName) {
 					rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetArrivalRwy(),
 					rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetAircraftFPType(),
 					rt.GetCorrelatedFlightPlan().GetControllerAssignedData().GetDirectToPointName(),
+					getFirstViaFixIndex(route, viaFixes),
 					rt.GetCorrelatedFlightPlan().GetTrackingControllerIsMe(),
 					isSelectedAircraft,
 					rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetAircraftWtc(),
 					timeNow + timeToFix - rt.GetPosition().GetReceivedTime(),
-					findRemainingDist(rt, fixId),
+					findRemainingDist(rt, route, targetFixIndex),
 					0
 				});
 			}
@@ -161,7 +162,7 @@ bool AmanPlugIn::OnCompileCommand(const char * sCommandLine) {
 			cmdHandled = true;
 		}
 		if (command == "clear") {
-			timelines.clear();
+			gTimelines.clear();
 			timelinesChanged = true;
 			cmdHandled = true;
 		}
@@ -171,26 +172,32 @@ bool AmanPlugIn::OnCompileCommand(const char * sCommandLine) {
 
 			// Add a new timeline
 			if (command == "add") {
-				this->addTimeline(id);
+				std::string vias = "";
+				if (args.size() >= 4) {
+					vias = args.at(3);
+					std::transform(vias.begin(), vias.end(), vias.begin(), ::toupper);
+				}
+
+				this->addTimeline(id, vias);
 				timelinesChanged = true;
 				cmdHandled = true;
 			}
 			// Remove a timeline
 			if (command == "del") {
-				for (int i = 0; i < timelines.size(); i++) {
-					auto timeline = timelines.at(i);
+				for (int i = 0; i < gTimelines.size(); i++) {
+					auto timeline = gTimelines.at(i);
 					auto fixNames = timeline->getFixNames();
 					auto idsFromArg = AmanPlugIn::splitString(id, '/');
 
 					if (timeline->isDual() && idsFromArg.size() == 2) {
 						if (idsFromArg.at(1) == fixNames[0] && idsFromArg.at(0) == fixNames[1]) {
-							timelines.erase(timelines.begin() + i);
+							gTimelines.erase(gTimelines.begin() + i);
 							timelinesChanged = true;
 							cmdHandled = true;
 						}
 					}
 					else if (!timeline->isDual() && id == fixNames[0]) {
-						timelines.erase(timelines.begin() + i);
+						gTimelines.erase(gTimelines.begin() + i);
 						timelinesChanged = true;
 						cmdHandled = true;
 					}
@@ -206,54 +213,62 @@ bool AmanPlugIn::OnCompileCommand(const char * sCommandLine) {
 	return cmdHandled;
 }
 
-void AmanPlugIn::addTimeline(std::string id) {
+void AmanPlugIn::addTimeline(std::string id, std::string viaFixes) {
 	auto ids = AmanPlugIn::splitString(id, '/');
+	auto vias = AmanPlugIn::splitString(viaFixes, ',');
 	if (ids.size() > 1) {
 		auto ids = AmanPlugIn::splitString(id, '/');
-		timelines.push_back(new AmanTimeline(ids.at(0), ids.at(1)));
+		gTimelines.push_back(new AmanTimeline(ids.at(0), ids.at(1), vias));
 	}
 	else {
-		timelines.push_back(new AmanTimeline(ids.at(0)));
+		gTimelines.push_back(new AmanTimeline(ids.at(0), vias));
 	}
 }
 
-int AmanPlugIn::getFixIndexByName(CRadarTarget radarTarget, const char* fixName) {
-	CFlightPlanExtractedRoute route = radarTarget.GetCorrelatedFlightPlan().GetExtractedRoute();
-
-	for (int i = 0; i < route.GetPointsNumber(); i++) {
-		if (!strcmp(route.GetPointName(i), fixName)) {
+int AmanPlugIn::getFixIndexByName(CFlightPlanExtractedRoute extractedRoute, const std::string& fixName) {
+	for (int i = 0; i < extractedRoute.GetPointsNumber(); i++) {
+		if (!strcmp(extractedRoute.GetPointName(i), fixName.c_str())) {
 			return i;
 		}
 	}
 	return -1;
 }
 
-double AmanPlugIn::findRemainingDist(CRadarTarget radarTarget, int fixIndex) {
-	CFlightPlanExtractedRoute route = radarTarget.GetCorrelatedFlightPlan().GetExtractedRoute();
-	int calcIndex = route.GetPointsCalculatedIndex();
-	int clrdIndex = route.GetPointsAssignedIndex();
-
-	int nextIndex = clrdIndex > -1 ? clrdIndex : calcIndex;
-
-	double totDist = radarTarget.GetPosition().GetPosition().DistanceTo(route.GetPointPosition(nextIndex));
-
-	for (int i = nextIndex; i < fixIndex; i++) {
-		totDist += route.GetPointPosition(i).DistanceTo(route.GetPointPosition(i + 1));
+int AmanPlugIn::getFirstViaFixIndex(CFlightPlanExtractedRoute extractedRoute, std::vector<std::string> viaFixes) {
+	for (int i = 0; i < viaFixes.size(); i++) {
+		if (getFixIndexByName(extractedRoute, viaFixes[i]) != -1) {
+			return i;
+		}
 	}
-	return totDist;
+	return -1;
+}
+
+double AmanPlugIn::findRemainingDist(CRadarTarget radarTarget, CFlightPlanExtractedRoute extractedRoute, int fixIndex) {
+	int closestFixIndex = extractedRoute.GetPointsCalculatedIndex();
+	int assignedDirectFixIndex = extractedRoute.GetPointsAssignedIndex();
+
+	int nextFixIndex = assignedDirectFixIndex > -1 ? assignedDirectFixIndex : closestFixIndex;
+	double totalDistance = radarTarget.GetPosition().GetPosition().DistanceTo(extractedRoute.GetPointPosition(nextFixIndex));
+
+	// Skip all waypoints before nextFixIndex
+	for (int i = nextFixIndex; i < fixIndex; i++) {
+		totalDistance += extractedRoute.GetPointPosition(i).DistanceTo(extractedRoute.GetPointPosition(i + 1));
+	}
+	return totalDistance;
 }
 
 std::vector<AmanTimeline*>* AmanPlugIn::getTimelines() {
-	for (int i = 0; i < timelines.size(); i++) {
-		auto aircraftLists = timelines.at(i)->getAircraftList();
-		auto fixNames = timelines.at(i)->getFixNames();
+	for (int i = 0; i < gTimelines.size(); i++) {
+		auto aircraftLists = gTimelines.at(i)->getAircraftLists();
+		auto fixNames = gTimelines.at(i)->getFixNames();
+		auto viaFixes = gTimelines.at(i)->getViaFixes();
 
-		aircraftLists[0] = getAllInbounds(fixNames[0].c_str());
-		if (timelines.at(i)->isDual()) {
-			aircraftLists[1] = getAllInbounds(fixNames[1].c_str());
+		aircraftLists[0] = getInboundsForFix(fixNames[0].c_str(), viaFixes);
+		if (gTimelines.at(i)->isDual()) {
+			aircraftLists[1] = getInboundsForFix(fixNames[1].c_str(), viaFixes);
 		}
 	}
-	return &timelines;
+	return &gTimelines; 
 }
 
 std::vector<std::string> AmanPlugIn::splitString(std::string string, const char delim) {
@@ -269,11 +284,15 @@ std::vector<std::string> AmanPlugIn::splitString(std::string string, const char 
 
 void AmanPlugIn::saveToSettings() {
 	std::stringstream ss;
-	for (AmanTimeline* timeline : timelines) {
+	for (AmanTimeline* timeline : gTimelines) {
 		auto id = timeline->getIdentifier();
+		auto viaFixes = timeline->getViaFixes();
+		std::ostringstream viaFixesSs;
+		copy(viaFixes.begin(), viaFixes.end(), std::ostream_iterator<std::string>(viaFixesSs, ","));
+
 		ss << timeline->getIdentifier()
 			<< SETTINGS_PARAM_DELIMITER
-			<< timeline->getRange()
+			<< viaFixesSs.str()
 			<< SETTINGS_PARAM_DELIMITER;
 	}
 	ss.seekp(-1, std::ios_base::end);	// remove last delimieter
