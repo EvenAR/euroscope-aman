@@ -2,10 +2,12 @@
 
 class AmanAircraft {
 public: 
-	const char* callsign;
-	const char* arrivalRunway;
-	const char* icaoType;
-	const char* nextFix;
+	std::string callsign;
+	std::string finalFix;
+	std::string arrivalRunway;
+	std::string icaoType;
+	std::string nextFix;
+
 	int viaFixIndex;
 
 	bool trackedByMe;

@@ -115,6 +115,7 @@ std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixNa
 			if (timeToFix > 0) {
 				aircraftList.push_back({
 					rt.GetCallsign(),
+					fixName,
 					rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetArrivalRwy(),
 					rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetAircraftFPType(),
 					rt.GetCorrelatedFlightPlan().GetControllerAssignedData().GetDirectToPointName(),
@@ -186,17 +187,17 @@ bool AmanPlugIn::OnCompileCommand(const char * sCommandLine) {
 			if (command == "del") {
 				for (int i = 0; i < gTimelines.size(); i++) {
 					auto timeline = gTimelines.at(i);
-					auto fixNames = timeline->getFixNames();
+					auto fixNames = timeline->getAircraftList();
 					auto idsFromArg = AmanPlugIn::splitString(id, '/');
 
 					if (timeline->isDual() && idsFromArg.size() == 2) {
-						if (idsFromArg.at(1) == fixNames[0] && idsFromArg.at(0) == fixNames[1]) {
+						if (timeline->containsListForFix(idsFromArg.at(0)) && timeline->containsListForFix(idsFromArg.at(1))) {
 							gTimelines.erase(gTimelines.begin() + i);
 							timelinesChanged = true;
 							cmdHandled = true;
 						}
 					}
-					else if (!timeline->isDual() && id == fixNames[0]) {
+					else if (!timeline->isDual() && timeline->containsListForFix(id)) {
 						gTimelines.erase(gTimelines.begin() + i);
 						timelinesChanged = true;
 						cmdHandled = true;
@@ -216,13 +217,7 @@ bool AmanPlugIn::OnCompileCommand(const char * sCommandLine) {
 void AmanPlugIn::addTimeline(std::string id, std::string viaFixes) {
 	auto ids = AmanPlugIn::splitString(id, '/');
 	auto vias = AmanPlugIn::splitString(viaFixes, ',');
-	if (ids.size() > 1) {
-		auto ids = AmanPlugIn::splitString(id, '/');
-		gTimelines.push_back(new AmanTimeline(ids.at(0), ids.at(1), vias));
-	}
-	else {
-		gTimelines.push_back(new AmanTimeline(ids.at(0), vias));
-	}
+	gTimelines.push_back(new AmanTimeline(ids, vias));
 }
 
 int AmanPlugIn::getFixIndexByName(CFlightPlanExtractedRoute extractedRoute, const std::string& fixName) {
@@ -250,7 +245,7 @@ double AmanPlugIn::findRemainingDist(CRadarTarget radarTarget, CFlightPlanExtrac
 	int nextFixIndex = assignedDirectFixIndex > -1 ? assignedDirectFixIndex : closestFixIndex;
 	double totalDistance = radarTarget.GetPosition().GetPosition().DistanceTo(extractedRoute.GetPointPosition(nextFixIndex));
 
-	// Skip all waypoints before nextFixIndex
+	// Ignore waypoints prior to nextFixIndex
 	for (int i = nextFixIndex; i < fixIndex; i++) {
 		totalDistance += extractedRoute.GetPointPosition(i).DistanceTo(extractedRoute.GetPointPosition(i + 1));
 	}
@@ -258,14 +253,15 @@ double AmanPlugIn::findRemainingDist(CRadarTarget radarTarget, CFlightPlanExtrac
 }
 
 std::vector<AmanTimeline*>* AmanPlugIn::getTimelines() {
-	for (int i = 0; i < gTimelines.size(); i++) {
-		auto aircraftLists = gTimelines.at(i)->getAircraftLists();
-		auto fixNames = gTimelines.at(i)->getFixNames();
-		auto viaFixes = gTimelines.at(i)->getViaFixes();
+	for each (auto timeline in gTimelines) {
+		auto pAircraftList = timeline->getAircraftList();
+		auto fixes = timeline->getFixes();
+		auto viaFixes = timeline->getViaFixes();
 
-		aircraftLists[0] = getInboundsForFix(fixNames[0].c_str(), viaFixes);
-		if (gTimelines.at(i)->isDual()) {
-			aircraftLists[1] = getInboundsForFix(fixNames[1].c_str(), viaFixes);
+		pAircraftList->clear();
+		for each (auto finalFix in fixes) {
+			auto var = getInboundsForFix(finalFix, viaFixes);
+			pAircraftList->insert(pAircraftList->end(), var.begin(), var.end());
 		}
 	}
 	return &gTimelines; 
@@ -289,10 +285,11 @@ void AmanPlugIn::saveToSettings() {
 		auto viaFixes = timeline->getViaFixes();
 		std::ostringstream viaFixesSs;
 		copy(viaFixes.begin(), viaFixes.end(), std::ostream_iterator<std::string>(viaFixesSs, ","));
-
+		std::string viaFixesOutput = viaFixesSs.str();
+		if(!viaFixesOutput.empty()) viaFixesOutput.pop_back(); // Remove last '/'
 		ss << timeline->getIdentifier()
 			<< SETTINGS_PARAM_DELIMITER
-			<< viaFixesSs.str()
+			<< viaFixesOutput
 			<< SETTINGS_PARAM_DELIMITER;
 	}
 	ss.seekp(-1, std::ios_base::end);	// remove last delimieter

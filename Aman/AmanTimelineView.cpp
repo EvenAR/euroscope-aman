@@ -106,9 +106,16 @@ CRect AmanTimelineView::render(AmanTimeline* timeline, CRect clientRect, HDC hdc
 
 	// Draw aircraft
 	SelectObject(hdc, AMAN_LABEL_FONT);
-	drawAircraftChain(hdc, now, timelineStartX, bottomHeight, pixelsPerSec, false, timeline->getAircraftLists()[0]);
+	
 	if (timeline->isDual()) {
-		drawAircraftChain(hdc, now, timelineStartX, bottomHeight, pixelsPerSec, true, timeline->getAircraftLists()[1]);
+		auto fixes = timeline->getFixes();
+		auto inboundsLeft = timeline->getAircraftList({ fixes[0] });
+		auto inboundsRight = timeline->getAircraftList({ fixes[1] });
+		drawAircraftChain(hdc, now, timelineStartX, bottomHeight, pixelsPerSec, true, inboundsLeft);
+		drawAircraftChain(hdc, now, timelineStartX, bottomHeight, pixelsPerSec, false, inboundsRight);
+	}
+	else {
+		drawAircraftChain(hdc, now, timelineStartX, bottomHeight, pixelsPerSec, false, *timeline->getAircraftList());
 	}
 	
 	// Draw the fix id
@@ -117,7 +124,7 @@ CRect AmanTimelineView::render(AmanTimeline* timeline, CRect clientRect, HDC hdc
 	SetTextColor(hdc, AMAN_COLOR_FIX_TEXT);
 	SelectObject(hdc, AMAN_FIX_FONT);
 	CRect rect = { timelineStartX - AMAN_TIMELINE_WIDTH, myTotalArea.bottom - 20, timelineStartX + 2*AMAN_TIMELINE_WIDTH, myTotalArea.bottom };
-	std::string text = timeline->isDual() ? timeline->getFixNames()[1] + "/" + timeline->getFixNames()[0] : timeline->getFixNames()[0];
+	std::string text = timeline->getIdentifier();
 	DrawText(hdc, text.c_str(), text.length(), &rect, DT_CENTER);
 
 	// Draw color legend
@@ -221,8 +228,8 @@ void AmanTimelineView::drawAircraftChain(HDC hdc, int timeNow, int xStart, int y
 		}
 
 		const char* nextFix = "-----";
-		if (strlen(aircraft.nextFix) > 0) {
-			nextFix = aircraft.nextFix;
+		if (strlen(aircraft.nextFix.c_str()) > 0) {
+			nextFix = aircraft.nextFix.c_str();
 		}
 
 		int minutesBehindPreceeding = round(aircraft.timeToNextAircraft / 60);
