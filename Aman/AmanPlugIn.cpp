@@ -132,7 +132,7 @@ std::vector<AmanAircraft> AmanPlugIn::getAllInbounds(const char* fixName) {
 			AmanAircraft* curr = &aircraftList[i];
 			AmanAircraft* next = &aircraftList[i + 1];
 
-			curr->timeToNextAircraft = curr->eta - next->eta;
+			curr->secondsBehindPreceeding = curr->eta - next->eta;
 		}
 	}
 	

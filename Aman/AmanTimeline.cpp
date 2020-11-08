@@ -182,7 +182,7 @@ void AmanTimeline::drawAircraftChain(HDC hdc, int timeNow, int xStart, int yStar
 			<< std::left << std::setfill(' ') << std::setw(7)
 			<< nextFix
 			<< std::left << std::setfill(' ') << std::setw(3)
-			<< round(aircraft.timeToNextAircraft / 60)
+			<< round(aircraft.secondsBehindPreceeding / 60)
 			<< std::right << std::setfill(' ') << std::setw(4)
 			<< round(aircraft.distLeft);
 
