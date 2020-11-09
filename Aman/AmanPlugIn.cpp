@@ -20,6 +20,10 @@
 #define SETTINGS_TIMELINE_DELIMITER '|'
 #define SETTINGS_PARAM_DELIMITER ';'
 
+#define TO_UPPERCASE(str) std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+#define REMOVE_EMPTY(strVec, output) std::copy_if(strVec.begin(), strVec.end(), std::back_inserter(output), [](std::string i) { return !i.empty(); });
+#define REMOVE_LAST_CHAR(str) if (str.length() > 0) str.pop_back();
+
 AmanPlugIn* pMyPlugIn;
 AmanController* amanController;
 std::vector<AmanTimeline*> gTimelines;
@@ -37,31 +41,30 @@ AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE,
 		auto timelinesFromSettings = AmanPlugIn::splitString(settings, SETTINGS_TIMELINE_DELIMITER);
 		for (std::string timeline : timelinesFromSettings) {
 			try {
-				auto timelineParams = AmanPlugIn::splitString(timeline.c_str(), SETTINGS_PARAM_DELIMITER);
-				std::string id = timelineParams.at(0);
-				std::string vias = timelineParams.at(1);
-				this->addTimeline(id, vias);
+				auto timelineParams = AmanPlugIn::splitString(timeline, SETTINGS_PARAM_DELIMITER);
+				std::string finalFixes = timelineParams.at(0);
+				std::string vias = timelineParams.size() > 1 ? timelineParams.at(1) : "";
+				this->addTimeline(finalFixes, vias);
 				this->DisplayUserMessage(
-					"AMAN", 
+					"AMAN",
 					"Info",
-					("The following timeline was loaded from settings: " + id).c_str(), 
+					("The following timeline was loaded from settings: " + finalFixes).c_str(),
 					true, false, false, false, false);
 			}
 			catch (const std::exception& e) {
 				std::string msg = "Invalid format in settings file: ";
 				this->DisplayUserMessage(
-					"AMAN", 
-					"Error", 
+					"AMAN",
+					"Error",
 					("Unable to load timeline from settings: " + timeline).c_str(),
 					true, false, false, false, false);
-			}	
+			}
 		}
 	}
 }
 
 AmanPlugIn::~AmanPlugIn()
 {
-	delete amanController;
 }
 
 std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixName, std::vector<std::string> viaFixes) {
@@ -155,69 +158,80 @@ bool AmanPlugIn::OnCompileCommand(const char * sCommandLine) {
 
 	auto args = AmanPlugIn::splitString(sCommandLine, ' ');
 	
-	if (args.size() >= 2 && args.at(0) == ".aman") {
-		std::string command = args.at(1).c_str();
+	if (args.size() > 1 && args.at(0) == ".aman") {
+		std::string command = args.at(1);
 
 		if (command == "show") {
 			amanController->openWindow();
 			cmdHandled = true;
 		}
-		if (command == "clear") {
+		else if (command == "clear") {
 			gTimelines.clear();
 			timelinesChanged = true;
 			cmdHandled = true;
 		}
-		else if (args.size() >= 3) {
-			std::string id = args.at(2);
-			std::transform(id.begin(), id.end(), id.begin(), ::toupper);
-
-			// Add a new timeline
-			if (command == "add") {
-				std::string vias = "";
-				if (args.size() >= 4) {
-					vias = args.at(3);
-					std::transform(vias.begin(), vias.end(), vias.begin(), ::toupper);
-				}
-
-				this->addTimeline(id, vias);
-				timelinesChanged = true;
-				cmdHandled = true;
-			}
-			// Remove a timeline
-			if (command == "del") {
-				for (int i = 0; i < gTimelines.size(); i++) {
-					auto timeline = gTimelines.at(i);
-					auto fixNames = timeline->getAircraftList();
-					auto idsFromArg = AmanPlugIn::splitString(id, '/');
-
-					if (timeline->isDual() && idsFromArg.size() == 2) {
-						if (timeline->containsListForFix(idsFromArg.at(0)) && timeline->containsListForFix(idsFromArg.at(1))) {
-							gTimelines.erase(gTimelines.begin() + i);
-							timelinesChanged = true;
-							cmdHandled = true;
-						}
-					}
-					else if (!timeline->isDual() && timeline->containsListForFix(id)) {
-						gTimelines.erase(gTimelines.begin() + i);
-						timelinesChanged = true;
-						cmdHandled = true;
-					}
-				}
-			}
+		else if (command == "add" && args.size() > 2) {
+			std::string finalFixes = args.at(2);
+			std::string vias = args.size() > 3 ? args.at(3) : "";
+			this->addTimeline(finalFixes, vias);
+			timelinesChanged = true;
+			cmdHandled = true;
+		}
+		else if (command == "del") {
+			int id;
+			try { id = stoi(args.at(2)); }
+			catch (std::exception& e) { id = 0; }
+			timelinesChanged = cmdHandled = this->removeTimeline(id - 1);
 		}
 	}
 	if (timelinesChanged) {
 		amanController->dataUpdated(getTimelines());
-		this->saveToSettings();
+		saveToSettings();
 	}
 	
 	return cmdHandled;
 }
 
-void AmanPlugIn::addTimeline(std::string id, std::string viaFixes) {
-	auto ids = AmanPlugIn::splitString(id, '/');
+void AmanPlugIn::saveToSettings() {
+	std::stringstream ss;
+	for (AmanTimeline* timeline : gTimelines) {
+		auto id = timeline->getIdentifier();
+		auto viaFixes = timeline->getViaFixes();
+
+		std::ostringstream viaFixesSs;
+		copy(viaFixes.begin(), viaFixes.end(), std::ostream_iterator<std::string>(viaFixesSs, ","));
+		std::string viaFixesOutput = viaFixesSs.str();
+		REMOVE_LAST_CHAR(viaFixesOutput);
+
+		ss << timeline->getIdentifier()
+			<< SETTINGS_PARAM_DELIMITER
+			<< viaFixesOutput
+			<< SETTINGS_TIMELINE_DELIMITER;
+	}
+	std::string toSave = ss.str();
+	REMOVE_LAST_CHAR(toSave);
+	pMyPlugIn->SaveDataToSettings("AMAN", "", toSave.c_str());
+}
+
+void AmanPlugIn::addTimeline(std::string finalFixes, std::string viaFixes) {
+	TO_UPPERCASE(finalFixes);
+	TO_UPPERCASE(viaFixes);
+	auto ids = AmanPlugIn::splitString(finalFixes, '/');
 	auto vias = AmanPlugIn::splitString(viaFixes, ',');
-	gTimelines.push_back(new AmanTimeline(ids, vias));
+
+	std::vector<std::string> nonEmptyFinalFixes, nonEmptyViaFixes;
+	REMOVE_EMPTY(ids, nonEmptyFinalFixes);
+	REMOVE_EMPTY(vias, nonEmptyViaFixes);
+
+	gTimelines.push_back(new AmanTimeline(nonEmptyFinalFixes, nonEmptyViaFixes));
+}
+
+bool AmanPlugIn::removeTimeline(int id) {
+	if (id >= 0 && id < gTimelines.size()) {
+		gTimelines.erase(gTimelines.begin() + id);
+		return true;
+	}
+	return false;
 }
 
 int AmanPlugIn::getFixIndexByName(CFlightPlanExtractedRoute extractedRoute, const std::string& fixName) {
@@ -267,33 +281,15 @@ std::vector<AmanTimeline*>* AmanPlugIn::getTimelines() {
 	return &gTimelines; 
 }
 
-std::vector<std::string> AmanPlugIn::splitString(std::string string, const char delim) {
-	std::vector<std::string> container;
+std::vector<std::string> AmanPlugIn::splitString(const std::string& string, const char delim) {
+	std::vector<std::string> output;
 	size_t start;
 	size_t end = 0;
 	while ((start = string.find_first_not_of(delim, end)) != std::string::npos) {
 		end = string.find(delim, start);
-		container.push_back(string.substr(start, end - start));
+		output.push_back(string.substr(start, end - start));
 	}
-	return container;
-}
-
-void AmanPlugIn::saveToSettings() {
-	std::stringstream ss;
-	for (AmanTimeline* timeline : gTimelines) {
-		auto id = timeline->getIdentifier();
-		auto viaFixes = timeline->getViaFixes();
-		std::ostringstream viaFixesSs;
-		copy(viaFixes.begin(), viaFixes.end(), std::ostream_iterator<std::string>(viaFixesSs, ","));
-		std::string viaFixesOutput = viaFixesSs.str();
-		if(!viaFixesOutput.empty()) viaFixesOutput.pop_back(); // Remove last '/'
-		ss << timeline->getIdentifier()
-			<< SETTINGS_PARAM_DELIMITER
-			<< viaFixesOutput
-			<< SETTINGS_PARAM_DELIMITER;
-	}
-	ss.seekp(-1, std::ios_base::end);	// remove last delimieter
-	pMyPlugIn->SaveDataToSettings("AMAN", "AMAN timelines", ss.str().c_str());
+	return output;
 }
 
 void __declspec (dllexport) EuroScopePlugInInit(EuroScopePlugIn::CPlugIn ** ppPlugInInstance) {
@@ -306,5 +302,6 @@ void __declspec (dllexport) EuroScopePlugInInit(EuroScopePlugIn::CPlugIn ** ppPl
 }
 
 void __declspec (dllexport) EuroScopePlugInExit(void) {
+	delete amanController;
 	delete pMyPlugIn;
 }
