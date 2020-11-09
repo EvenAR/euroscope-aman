@@ -7,11 +7,13 @@ The AMAN-display will appear in a separate window once the plugin has been loade
 
 ### Add a timeline
 * `.aman add WAYPT1` adds a timeline for a single waypoint.
-* `.aman add WAYPT1/WAYPT2` adds a timeline shared by two waypoints, where aircraft inbound for `WAYPT1` are shown on the left side and inbounds to `WAYPT2` are shown on the right side.
+* `.aman add WAYPT1/WAYPT2` adds a split view with, where aircraft inbound for `WAYPT1` are shown on the left side and inbounds to `WAYPT2` are shown on the right side.
+* `.aman add WAYPT1/WAYPT2/WAYPT3/...` adds a timeline showing inbounds for multiple waypoints.
+* `.aman add <waypoints> VIA1,VIA2,VIA3,...` adds a timeline with call signs colored based on which via-waypoint the aircraft is coming from. 
 
 ### Remove a timeline
-* `.aman del WAYPT1` or `.aman del WAYPT1/WAYPT2`
-* `.aman clear` removes all timelines
+* `.aman del X` where X is the position of the timeline you want to remove, counting from the left (1 = the leftmost). 
+* `.aman clear` removes all timelines.
 
 ## Download
 - Note: This is an early version of the plugin. It is recommended to load the plugin in a secondary instance of EuroScope (connected to VATSIM via proxy) in case the plugin causes EuroScope to crash.
