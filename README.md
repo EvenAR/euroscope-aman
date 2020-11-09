@@ -8,7 +8,7 @@ The AMAN-display will appear in a separate window once the plugin has been loade
 |--------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
 | `.aman show`                               | opens the window if it's been closed                                                                                                        |
 | `.aman add WAYPT1`                         | adds a timeline for a single waypoint                                                                                                       |
-| `.aman add WAYPT1/WAYPT2`                  | adds a split view with, where aircraft inbound for `WAYPT1` are shown on the left side and inbounds to `WAYPT2` are shown on the right side |
+| `.aman add WAYPT1/WAYPT2`                  | adds a split view where aircraft inbound for `WAYPT1` are shown on the left side and inbounds to `WAYPT2` are shown on the right side |
 | `.aman add WAYPT1/WAYPT2/WAYPT3/...`       | adds a timeline showing inbounds for multiple waypoints                                                                                     |
 | `.aman add <waypoints> VIA1,VIA2,VIA3,...` | adds a timeline with call signs colored based on which via-waypoint the aircraft is coming from                                             |
 | `.aman del X`                              | removes a timeline where X is the position of the timeline you want to remove, counting from the left (1 = the leftmost)                    |
