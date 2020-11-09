@@ -138,9 +138,6 @@ LRESULT CALLBACK AmanWindow::windowProc(HWND hwnd, UINT message, WPARAM wParam, 
 	GetWindowRect(hwnd, &windowRect);
 	GetCursorPos(&cursorPosition);
 
-	int xPos;
-	int yPos;
-	int res;
 	switch (message) {
 		case WM_DESTROY: {
 			PostQuitMessage(0);
@@ -162,8 +159,8 @@ LRESULT CALLBACK AmanWindow::windowProc(HWND hwnd, UINT message, WPARAM wParam, 
 		}
 		break;
 	case WM_CLOSE: {
-			res = DestroyWindow(hwnd);
-			res = UnregisterClass(AMAN_WINDOW_CLASS_NAME, hInstance);
+			DestroyWindow(hwnd);
+			UnregisterClass(AMAN_WINDOW_CLASS_NAME, hInstance);
 			gpController->windowClosed();
 		}
 		break;
@@ -249,6 +246,7 @@ AmanTimeline* AmanWindow::getTimelineAt(std::vector<AmanTimeline*>* timelines, C
 			return timeline;
 		}
 	}
+	return nullptr;
 }
 
 AmanWindow::~AmanWindow() {
