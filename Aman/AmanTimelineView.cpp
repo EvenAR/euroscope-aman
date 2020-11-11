@@ -29,31 +29,29 @@ CRect AmanTimelineView::getArea(AmanTimeline* timeline, CRect clientRect, int xO
 	);
 }
 
-CRect AmanTimelineView::render(AmanTimeline* timeline, CRect clientRect, HDC hdc, int offset) {
-	CRect myTotalArea = getArea(timeline, clientRect, offset);
+CRect AmanTimelineView::render(AmanTimeline* timeline, CRect clientRect, HDC hdc, int xOffset) {
+	CRect myTotalArea = getArea(timeline, clientRect, xOffset);
 
-	long int now = static_cast<long int> (std::time(nullptr));			// Current UNIX-timestamp in seconds
-	int minutesNow = (now / 60 + 1);									// UNIX time in minutes
+	long int unixTimestamp = static_cast<long int> (std::time(nullptr));			// Current UNIX-unixTimestamp in seconds
+	int unixTimestampAsMinutes = (unixTimestamp / 60 + 1);									// UNIX time in minutes
 
 	int timelineStartX = myTotalArea.left;
 	if (timeline->isDual()) {
 		timelineStartX += AMAN_WIDTH - AMAN_TIMELINE_WIDTH;
 	}
 
-	// Window size-dependent calculations
-	int topHeight = myTotalArea.top;												// Top of timeline (future) in pixels
-	int bottomHeight = myTotalArea.bottom - AMAN_TIMELINE_REALTIME_OFFSET;		// Bottom of timeline (now) in pixels
-	double pixelsPerSec = (float)(bottomHeight - topHeight) / (float)timeline->getRange();
-	double pixelsPerMin = 60.0 * pixelsPerSec;
+	int presentTimeStartY = myTotalArea.bottom - AMAN_TIMELINE_REALTIME_OFFSET;
+	double pixelsPerSecY = (float)(presentTimeStartY - myTotalArea.top) / (float)timeline->getRange();
+	double pixelsPerMinuteY = 60.0 * pixelsPerSecY;
 
 	// Timeline bar
-	int secToNextMin = 60 - (now % 60);
+	int secToNextMin = 60 - (unixTimestamp % 60);
 
 	CRect futureBackground = { timelineStartX, 0, timelineStartX + AMAN_TIMELINE_WIDTH, myTotalArea.bottom };
 	FillRect(hdc, &futureBackground, AMAN_BRUSH_TIMELINE_AHEAD);
 	CRect pastBackground = { timelineStartX, myTotalArea.bottom - AMAN_TIMELINE_REALTIME_OFFSET, timelineStartX + AMAN_TIMELINE_WIDTH, myTotalArea.bottom };
 	FillRect(hdc, &pastBackground, AMAN_BRUSH_TIMELINE_PAST);
-	
+
 	// Vertical white border(s)
 	HPEN oldPen = (HPEN)SelectObject(hdc, AMAN_VERTICAL_LINE_PEN);
 	MoveToEx(hdc, timelineStartX + AMAN_TIMELINE_WIDTH, myTotalArea.bottom, NULL);
@@ -63,45 +61,60 @@ CRect AmanTimelineView::render(AmanTimeline* timeline, CRect clientRect, HDC hdc
 		LineTo(hdc, timelineStartX, myTotalArea.top);
 	}
 
-	// Render minute ticks with times
+	// Render minute ticks with MM:SS-labels
 	HFONT oldFont = (HFONT)SelectObject(hdc, AMAN_TIME_FONT);
 	COLORREF oldColor = SetTextColor(hdc, AMAN_COLOR_TIME_TEXT);
 	int oldBackground = SetBkMode(hdc, TRANSPARENT);
-	int nextMinutePosition = bottomHeight - secToNextMin * pixelsPerSec;
-	
-	int nextMinute = minutesNow % 60 ;		// Clock minute time
 
-	for (int min = 0; min < timeline->getRange()/60; min++) {
-		int linePos = nextMinutePosition - (min * pixelsPerMin);
-		int minAtLine = (nextMinute + min) % 60;
-		
+	int firstMinute = unixTimestampAsMinutes % 60;
+	int firstMinutePositionY = floor(presentTimeStartY - secToNextMin * pixelsPerSecY);
+	int pastMinutesToDisplay = floor(AMAN_TIMELINE_REALTIME_OFFSET / pixelsPerMinuteY);
+	int futureMinutesToDisplay = floor(timeline->getRange() / 60);
 
-		int tickLength = 4;
-		if (minAtLine % 5 == 0) {
-			tickLength = 8;
-		}
+	for (int minute = -pastMinutesToDisplay; minute < futureMinutesToDisplay; minute++) {
+		int tickPosY = firstMinutePositionY - (minute * pixelsPerMinuteY);
+		int minutesAtTick = (firstMinute + minute) % 60;
+
 		std::stringstream timeSs;
-		if (minAtLine % 10 == 0) {
+		if (minutesAtTick % 10 == 0) {
 			// 10 minute label
-			int hoursAtLine = ((minutesNow + min) / 60) % 24;
-			timeSs << std::setfill('0') << std::setw(2) << hoursAtLine << ":" << std::setw(2) << minAtLine;
-		} else if (minAtLine % 5 == 0 || pixelsPerMin > 15) {
+			int hoursAtLine = ((unixTimestampAsMinutes + minute) / 60) % 24;
+			timeSs << std::setfill('0') << std::setw(2) << hoursAtLine << ":" << std::setw(2) << minutesAtTick;
+		}
+		else if (minutesAtTick % 5 == 0 || pixelsPerMinuteY > AMAN_TIMELINE_MAX_TICK_DENSITY) {
 			// 5 and 1 minute label
-			timeSs << std::setfill('0') << std::setw(2) << minAtLine;
+			timeSs << std::setfill('0') << std::setw(2) << minutesAtTick;
 		}
 
 		auto timeString = timeSs.str();
 		if (!timeString.empty()) {
-			CRect rect = { timelineStartX, linePos - 6, timelineStartX + AMAN_TIMELINE_WIDTH, linePos + 6 };
+			CRect rect = { timelineStartX, tickPosY - 6, timelineStartX + AMAN_TIMELINE_WIDTH, tickPosY + 6 };
 			DrawText(hdc, timeString.c_str(), strlen(timeString.c_str()), &rect, DT_CENTER);
 		}
 
-		MoveToEx(hdc, timelineStartX + AMAN_TIMELINE_WIDTH, linePos, NULL);
-		LineTo(hdc, timelineStartX + AMAN_TIMELINE_WIDTH - tickLength, linePos);
+		int tickLength = minutesAtTick % 5 == 0 ? AMAN_TIMELINE_TICK_WIDTH_5_MIN : AMAN_TIMELINE_TICK_WIDTH_1_MIN;
+
+		MoveToEx(hdc, timelineStartX + AMAN_TIMELINE_WIDTH, tickPosY, NULL);
+		LineTo(hdc, timelineStartX + AMAN_TIMELINE_WIDTH - tickLength, tickPosY);
 		if (timeline->isDual()) {
-			MoveToEx(hdc, timelineStartX, linePos, NULL);
-			LineTo(hdc, timelineStartX + tickLength, linePos);
+			MoveToEx(hdc, timelineStartX, tickPosY, NULL);
+			LineTo(hdc, timelineStartX + tickLength, tickPosY);
 		}
+	}
+
+	auto drawHourglass = [hdc](int x, int y) {
+		POINT polygon[] = {
+			POINT{ x - 4, y - 4 },
+			POINT{ x + 4, y + 4 },
+			POINT{ x + 4, y - 4 },
+			POINT{ x - 4, y + 4 }
+		};
+		Polygon(hdc, polygon, 4);
+	};
+	oldPen = (HPEN)SelectObject(hdc, AMAN_WHITE_PEN);
+	drawHourglass(timelineStartX + AMAN_TIMELINE_WIDTH, presentTimeStartY);
+	if (timeline->isDual()) {
+		drawHourglass(timelineStartX, presentTimeStartY);
 	}
 
 	// Draw aircraft
@@ -111,11 +124,11 @@ CRect AmanTimelineView::render(AmanTimeline* timeline, CRect clientRect, HDC hdc
 		auto fixes = timeline->getFixes();
 		auto inboundsLeft = timeline->getAircraftList({ fixes[0] });
 		auto inboundsRight = timeline->getAircraftList({ fixes[1] });
-		drawAircraftChain(hdc, now, timelineStartX, bottomHeight, pixelsPerSec, true, inboundsLeft);
-		drawAircraftChain(hdc, now, timelineStartX, bottomHeight, pixelsPerSec, false, inboundsRight);
+		drawAircraftChain(hdc, unixTimestamp, timelineStartX, presentTimeStartY, pixelsPerSecY, true, inboundsLeft);
+		drawAircraftChain(hdc, unixTimestamp, timelineStartX, presentTimeStartY, pixelsPerSecY, false, inboundsRight);
 	}
 	else {
-		drawAircraftChain(hdc, now, timelineStartX, bottomHeight, pixelsPerSec, false, *timeline->getAircraftList());
+		drawAircraftChain(hdc, unixTimestamp, timelineStartX, presentTimeStartY, pixelsPerSecY, false, *timeline->getAircraftList());
 	}
 	
 	// Draw the fix id

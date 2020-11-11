@@ -8,7 +8,7 @@ class AmanTimeline;
 class AmanTimelineView
 {
 public:
-	static CRect render(AmanTimeline* timeline, CRect clientRect, HDC memdc, int offset);
+	static CRect render(AmanTimeline* timeline, CRect clientRect, HDC memdc, int xOffset);
 	static CRect getArea(AmanTimeline* timeline, CRect clientRect, int i);
 
 private:
