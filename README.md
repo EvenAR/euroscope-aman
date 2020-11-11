@@ -1,7 +1,7 @@
 # Arrival manager for EuroScope 
 A simple arrival manager plugin for EuroScope. Uses the position predictions provided by EuroScope to visualize the arrival flow for a given airport or waypoint.
 
-## Usage
+## How to use
 The AMAN-display will appear in a separate window once the plugin has been loaded. Use the following commands to configure the view:
 
 | Command                                    | Description                                                                                                                                 |
