@@ -2,37 +2,31 @@
 
 #include <vector>
 
+class TitleBar;
 class AmanWindow;
 class AmanPlugIn;
 class AmanTimeline;
 
-class AmanController
-{
-	
-private:
-	bool expanded = true;
-	bool moveWindow = false;
-	bool doResize = false;
-	CPoint mouseDownPosition;
-	CPoint previousMousePosition;
-
-	AmanPlugIn* amanPlugin;	// Model
-	AmanWindow* amanWindow;	// View1
-
+class AmanController {
 public:
-	AmanController(AmanPlugIn* plugin);
-	void openWindow();
-	void windowClosed();
-	void mousePressed(CRect windowRect, CPoint cursorPosition);
-	void mouseReleased(CRect windowRect, CPoint cursorPosition);
-	void mouseMoved(CRect windowRect, CPoint cursorPosition);
-	void mouseWheelSrolled(CPoint cursorPosition, short delta);
-	void dataUpdated(std::vector<AmanTimeline*>* timelines);
+    AmanController(AmanPlugIn* plugin);
+    void openWindow();
+    void windowClosed();
+    void mousePressed(CPoint cursorPosition);
+    void mouseReleased(CPoint cursorPosition);
+    void mouseMoved(CPoint cursorPosition);
+    void mouseWheelSrolled(CPoint cursorPosition, short delta);
+    void dataUpdated(const std::vector<AmanTimeline*>& timelines);
 
-	void resizebuttonPressed();
-	void titleBarPressed();
-	void collapseButtonPressed();
+    ~AmanController();
 
-	~AmanController();
+private:
+    bool moveWindow = false;
+    bool doResize = false;
+    CPoint mouseDownPosition;
+    CPoint previousMousePosition;
+
+    AmanPlugIn* amanPlugin; // Model
+    AmanWindow* amanWindow; // View1
+    TitleBar* titleBar;
 };
-

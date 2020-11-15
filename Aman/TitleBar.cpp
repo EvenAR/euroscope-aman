@@ -1,88 +1,62 @@
 #include "stdafx.h"
-#include "TitleBar.h"
-#include "Constants.h"
-#include "AmanController.h"
+
 
 #include <string>
 
-TitleBar::TitleBar(AmanController* controller) {
-	this->controller = controller;
-}
+#include "AmanController.h"
+#include "Constants.h"
+#include "TitleBar.h"
+
+
+TitleBar::TitleBar() {}
 
 void TitleBar::render(CRect clientRect, HDC memdc) {
-	int buttonMargin = 5;
-	int buttonSize = 10;
-	
-	this->titleBarRect = { 0, 0, clientRect.right, AMAN_TITLEBAR_HEIGHT };
+    int buttonMargin = 5;
+    int buttonSize = 10;
 
-	this->resizeButton.rect = {
-		clientRect.Width() - buttonMargin - buttonSize,
-		buttonMargin,
-		clientRect.Width() - buttonMargin,
-		buttonMargin + buttonSize
-	};
+    this->titleBarRect = { 0, 0, clientRect.right, AMAN_TITLEBAR_HEIGHT };
 
-	this->closeButton.rect = {
-		clientRect.Width() - buttonMargin*2 - buttonSize*2,
-		buttonMargin,
-		clientRect.Width() - buttonSize - buttonMargin*2,
-		buttonMargin + buttonSize
-	};
+    this->resizeButton.rect = { clientRect.Width() - buttonMargin - buttonSize, buttonMargin,
+                               clientRect.Width() - buttonMargin, buttonMargin + buttonSize };
 
-	// Start drawing
-	FillRect(memdc, &this->titleBarRect, AMAN_BRUSH_MENU_BACKGROUND);
+    this->closeButton.rect = { clientRect.Width() - buttonMargin * 2 - buttonSize * 2, buttonMargin,
+                              clientRect.Width() - buttonSize - buttonMargin * 2, buttonMargin + buttonSize };
 
-	HBRUSH oldBrush = (HBRUSH)SelectObject(memdc, GetStockObject(NULL_BRUSH));
-	HPEN oldPen = (HPEN)SelectObject(memdc, AMAN_WHITE_PEN);
-	int oldBackground = SetBkMode(memdc, TRANSPARENT);
-	int oldTextColor = SetTextColor(memdc, AMAN_COLOR_TITLE_BAR_TEXT);
-	
-	DrawText(memdc, this->title, strlen(this->title), &this->titleBarRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+    // Start drawing
+    FillRect(memdc, &this->titleBarRect, AMAN_BRUSH_MENU_BACKGROUND);
 
-	CRect btnRect = this->resizeButton.rect;
-	Rectangle(memdc, btnRect.left, btnRect.top, btnRect.left + 5, btnRect.top + 5);
-	Rectangle(memdc, btnRect.left, btnRect.top, btnRect.left + 8, btnRect.top + 8);
-	Rectangle(memdc, btnRect.left, btnRect.top, btnRect.left + 11, btnRect.top + 11);
+    HBRUSH oldBrush = (HBRUSH)SelectObject(memdc, GetStockObject(NULL_BRUSH));
+    HPEN oldPen = (HPEN)SelectObject(memdc, AMAN_WHITE_PEN);
+    int oldBackground = SetBkMode(memdc, TRANSPARENT);
+    int oldTextColor = SetTextColor(memdc, AMAN_COLOR_TITLE_BAR_TEXT);
 
-	btnRect = this->closeButton.rect;
-	Rectangle(memdc, btnRect.left, btnRect.top, btnRect.left + 11, btnRect.top + 11);
+    DrawText(memdc, this->title, strlen(this->title), &this->titleBarRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 
-	SelectObject(memdc, AMAN_BRUSH_MENU_ICON_FILL);
-	Ellipse(memdc, btnRect.left + 3, btnRect.top + 3, btnRect.left + 8, btnRect.top + 8);
+    // Resize button
+    CRect btnRect = this->resizeButton.rect;
+    Rectangle(memdc, btnRect.left, btnRect.top, btnRect.left + 5, btnRect.top + 5);
+    Rectangle(memdc, btnRect.left, btnRect.top, btnRect.left + 8, btnRect.top + 8);
+    Rectangle(memdc, btnRect.left, btnRect.top, btnRect.left + 11, btnRect.top + 11);
 
-	SelectObject(memdc, oldBrush);
-	SelectObject(memdc, oldPen);
-	SetBkMode(memdc, oldBackground);
+    btnRect = this->closeButton.rect;
+    Rectangle(memdc, btnRect.left, btnRect.top, btnRect.left + 11, btnRect.top + 11);
+
+    SelectObject(memdc, AMAN_BRUSH_MENU_ICON_FILL);
+    Ellipse(memdc, btnRect.left + 3, btnRect.top + 3, btnRect.left + 8, btnRect.top + 8);
+
+    SelectObject(memdc, oldBrush);
+    SelectObject(memdc, oldPen);
+    SetBkMode(memdc, oldBackground);
 }
 
-void TitleBar::mouseHover(CRect clientRect, CPoint cursorPosition) {
-	if (PtInRect(&this->resizeButton.rect, cursorPosition)) {
-		this->resizeButton.hovered = true;
-	}
-	else {
-		this->resizeButton.hovered = false;
-	}
-
-	if (PtInRect(&this->closeButton.rect, cursorPosition)) {
-		this->closeButton.hovered = true;
-	}
-	else {
-		this->closeButton.hovered = false;
-	}
+void TitleBar::mousePressed(CPoint cursorPosition) {
+    if (this->resizeButton.rect.PtInRect(cursorPosition)) {
+        this->emit("RESIZE_PRESSED");
+    } else if (this->closeButton.rect.PtInRect(cursorPosition)) {
+        this->emit("COLLAPSE_CLICKED");
+    } else if (this->titleBarRect.PtInRect(cursorPosition)) {
+        this->emit("MOUSE_PRESSED");
+    }
 }
 
-void TitleBar::mousePressed(CRect clientRect, CPoint cursorPosition) {
-	if (this->resizeButton.rect.PtInRect(cursorPosition)) {
-		controller->resizebuttonPressed();
-	}
-	else if (this->closeButton.rect.PtInRect(cursorPosition)) {
-		controller->collapseButtonPressed();
-	}
-	else if (this->titleBarRect.PtInRect(cursorPosition)) {
-		controller->titleBarPressed();
-	}
-}
-
-TitleBar::~TitleBar()
-{
-}
+TitleBar::~TitleBar() {}
