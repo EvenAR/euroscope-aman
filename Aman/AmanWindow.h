@@ -2,17 +2,14 @@
 #include <vector>
 #include <mutex>
 
-#define AIRCRAFT_DATA (WM_APP + 101)
-#define CLOSE_WINDOW (WM_APP + 101)
-#define AMAN_WINDOW_CLASS_NAME "AmanWindow"
-#define AMAN_WINDOW_TITLE "AMAN"
+#include "Window.h"
 
 class AmanController;
 class AmanTimeline;
 class AmanRenderer;
 class TitleBar;
 
-class AmanWindow {
+class AmanWindow : public Window {
 
 public:
     AmanWindow(AmanController* controller, TitleBar* titleBar);
@@ -22,27 +19,22 @@ public:
     void collapse();
     void expand();
     bool isExpanded();
-    void moveWindowBy(CPoint delta);
-    void resizeWindowBy(CPoint delta);
-    bool handleMessages();
-    bool create();
-    void show(int nCmdShow);
 
     AmanTimeline* getTimelineAt(const std::vector<AmanTimeline*>& timelines, CPoint cursorPosition);
 
 private:
-    AmanController* gpController;
-    TitleBar* gpTitleBar;
+    AmanController* controller;
+    TitleBar* titleBar;
 
-    int originalHeight;
     std::vector<AmanTimeline*> gpCurrentTimelines;
     std::mutex renderTimelinesMutex;
-    DWORD threadId;
-    HWND hwnd;
 
-    static DWORD WINAPI lookForMessages(LPVOID lpParam);
-    static LRESULT CALLBACK messageRouter(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
-    LRESULT CALLBACK handleMessage(UINT message, WPARAM wParam, LPARAM lParam);
+    int originalHeight;
 
-    void drawContent(HWND hwnd);
+    void mousePressed(CPoint cursorPosition) override;
+    void mouseReleased(CPoint cursorPosition) override;
+    void mouseMoved(CPoint cursorPosition) override;
+    void mouseWheelSrolled(CPoint cursorPosition, short delta) override;
+    void windowClosed() override;
+    void drawContent(HWND hwnd) override;
 };
