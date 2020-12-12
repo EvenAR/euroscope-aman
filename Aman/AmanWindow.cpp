@@ -7,54 +7,40 @@
 #include "Constants.h"
 #include "TitleBar.h"
 
-#include <condition_variable>
 #include <ctime>
-#include <iomanip>
-#include <mutex>
-#include <sstream>
-
-AmanController* gpController;
-std::vector<AmanTimeline*> gpCurrentTimelines;
-
-std::mutex renderTimelinesMutex;
-std::condition_variable cv;
-
-HINSTANCE hInstance;
-CPoint position;
-HWND hwnd;
-TitleBar* gpTitleBar;
-
-int originalHeight;
-bool minimized = false;
 
 AmanWindow::AmanWindow(AmanController* controller, TitleBar* titleBar) {
-    hInstance = GetModuleHandle(NULL);
     gpController = controller;
     gpTitleBar = titleBar;
-    CreateThread(0, NULL, AmanWindow::threadProc, NULL, NULL, &threadId);
+
+    create();
+    show(SW_SHOWNORMAL);
+
+    // Thread responsible for updating the window
+    CreateThread(0, NULL, AmanWindow::lookForMessages, this, NULL, &threadId);
 }
 
-void AmanWindow::update(const std::vector<AmanTimeline*>& timelines) {
-    renderTimelinesMutex.lock(); // Wait for current render to complete
-    gpCurrentTimelines = timelines;
-    renderTimelinesMutex.unlock();
-
-    // Tell the window that new aircraft data is available
-    PostThreadMessage(threadId, AIRCRAFT_DATA, 0, NULL);
+AmanWindow::~AmanWindow() {
+    if (HWND hWnd = FindWindow(AMAN_WINDOW_CLASS_NAME, NULL)) {
+        SendMessage(hWnd, WM_CLOSE, 0, 0);
+        WaitForSingleObject(&threadId, INFINITE);
+        TerminateThread(&threadId, 0);
+    }
 }
 
-// Window thread procedure
-DWORD WINAPI AmanWindow::threadProc(LPVOID lpParam) {
-    WNDCLASSEX wc{};
+bool AmanWindow::create() {
+    HINSTANCE hInstance = GetModuleHandle(NULL);
+
+    WNDCLASSEX wc;
+
     wc.hInstance = hInstance;
     wc.lpszClassName = AMAN_WINDOW_CLASS_NAME;
-    wc.lpfnWndProc = AmanWindow::windowProc;
+    wc.lpfnWndProc = AmanWindow::messageRouter;
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.cbSize = sizeof(WNDCLASSEX);
     wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APPLICATION));
     wc.hIconSm = LoadIcon(wc.hInstance, MAKEINTRESOURCE(IDI_APPLICATION));
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-
     wc.lpszMenuName = NULL;
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
@@ -64,32 +50,83 @@ DWORD WINAPI AmanWindow::threadProc(LPVOID lpParam) {
         return false;
     }
 
-    HWND prnt_hWnd = NULL;
-    hwnd = CreateWindowEx(WS_EX_TOPMOST, AMAN_WINDOW_CLASS_NAME, AMAN_WINDOW_TITLE, WS_POPUP, CW_USEDEFAULT,
-        CW_USEDEFAULT, 600, 900, prnt_hWnd, NULL, hInstance, NULL);
+    HWND hwnd = CreateWindowEx(
+        WS_EX_TOPMOST,
+        AMAN_WINDOW_CLASS_NAME,
+        AMAN_WINDOW_TITLE,
+        WS_POPUP,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        600,
+        900,
+        NULL,
+        NULL,
+        hInstance,
+        this
+    );
 
     SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
 
+    return true;
+}
+
+void AmanWindow::show(int nCmdShow) {
     ShowWindow(hwnd, SW_SHOWNORMAL);
+}
 
-    MSG msg;
-    BOOL bRet;
-    while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-
-        switch (msg.message) {
-        case AIRCRAFT_DATA:
-            RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE); // Triggers WM_PAINT
-        }
+// Window thread procedure
+DWORD WINAPI AmanWindow::lookForMessages(LPVOID lpParam) {
+    AmanWindow* amanWindow = (AmanWindow*)lpParam;
+    while (true) {
+        if (!amanWindow->handleMessages()) break;
     }
     return true;
 }
 
+void AmanWindow::update(const std::vector<AmanTimeline*>& timelines) {
+    renderTimelinesMutex.lock(); // Wait for current render to complete
+    gpCurrentTimelines = timelines;
+    renderTimelinesMutex.unlock();
+
+    ::RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE); // Triggers WM_PAINT
+}
+
+bool AmanWindow::handleMessages() {
+    static MSG msg;
+
+    if (!hwnd)
+        throw std::runtime_error(std::string("Window not yet created"));
+
+    if (::GetMessage(&msg, hwnd, 0, 0)) {
+        ::TranslateMessage(&msg);
+        ::DispatchMessage(&msg);
+    }
+
+    return true;
+}
+
+LRESULT CALLBACK AmanWindow::messageRouter(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
+    AmanWindow* window = 0;
+
+    if (message == WM_NCCREATE) {
+        // retrieve Window instance from window creation data and associate
+        window = reinterpret_cast<AmanWindow*>(((LPCREATESTRUCT)lparam)->lpCreateParams);
+        ::SetWindowLong(hwnd, GWL_USERDATA, reinterpret_cast<long>(window));
+        window->hwnd = hwnd;
+    } else {
+        // retrieve associated Window instance
+        window = reinterpret_cast<AmanWindow*>(::GetWindowLong(hwnd, GWL_USERDATA));
+    }
+
+    return window->handleMessage(message, wparam, lparam);
+}
+
 // The window procedure
-LRESULT CALLBACK AmanWindow::windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK AmanWindow::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
     CRect windowRect;
     CPoint cursorPosition;
+    HINSTANCE hInstance = (HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE);
+
     GetWindowRect(hwnd, &windowRect);
     GetCursorPos(&cursorPosition);
 
@@ -226,12 +263,4 @@ bool AmanWindow::isExpanded() {
     CRect windowRect;
     GetWindowRect(hwnd, &windowRect);
     return windowRect.Height() != AMAN_TITLEBAR_HEIGHT;
-}
-
-AmanWindow::~AmanWindow() {
-    if (HWND hWnd = FindWindow(AMAN_WINDOW_CLASS_NAME, NULL)) {
-        SendMessage(hWnd, WM_CLOSE, 0, 0);
-        WaitForSingleObject(&threadId, INFINITE);
-        TerminateThread(&threadId, 0);
-    }
 }

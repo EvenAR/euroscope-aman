@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <mutex>
 
 #define AIRCRAFT_DATA (WM_APP + 101)
 #define CLOSE_WINDOW (WM_APP + 101)
@@ -23,14 +24,25 @@ public:
     bool isExpanded();
     void moveWindowBy(CPoint delta);
     void resizeWindowBy(CPoint delta);
+    bool handleMessages();
+    bool create();
+    void show(int nCmdShow);
 
     AmanTimeline* getTimelineAt(const std::vector<AmanTimeline*>& timelines, CPoint cursorPosition);
 
 private:
-    TitleBar* titleBar;
-    DWORD threadId;
+    AmanController* gpController;
+    TitleBar* gpTitleBar;
 
-    static void drawContent(HWND hwnd);
-    static LRESULT CALLBACK windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
-    static DWORD WINAPI threadProc(LPVOID lpParam);
+    int originalHeight;
+    std::vector<AmanTimeline*> gpCurrentTimelines;
+    std::mutex renderTimelinesMutex;
+    DWORD threadId;
+    HWND hwnd;
+
+    static DWORD WINAPI lookForMessages(LPVOID lpParam);
+    static LRESULT CALLBACK messageRouter(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
+    LRESULT CALLBACK handleMessage(UINT message, WPARAM wParam, LPARAM lParam);
+
+    void drawContent(HWND hwnd);
 };
