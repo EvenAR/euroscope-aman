@@ -16,7 +16,7 @@ protected:
     virtual void mouseMoved(CPoint cursorPosition) {};
     virtual void mouseWheelSrolled(CPoint cursorPosition, short delta) {};
     virtual void windowClosed() {};
-    virtual void drawContent(HWND hwnd) {};
+    virtual void drawContent(HDC hdc, CRect clientRect) {};
 
     void requestRepaint();
     HWND hwnd;
@@ -34,7 +34,6 @@ private:
     bool create();
     void show(int nCmdShow);
     bool processNextMessage();
-
-
+    void render(HWND hwnd);
 };
 

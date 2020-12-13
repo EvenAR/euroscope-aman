@@ -1,7 +1,5 @@
 #include "stdafx.h"
 
-#include <ctime>
-
 #include "AmanController.h"
 #include "AmanTimelineView.h"
 #include "AmanWindow.h"
@@ -17,48 +15,25 @@ AmanWindow::~AmanWindow() {}
 
 void AmanWindow::update(const std::vector<AmanTimeline*>& timelines) {
     renderTimelinesMutex.lock(); // Wait for current render to complete
-    gpCurrentTimelines = timelines;
+    currentTimelines = timelines;
     renderTimelinesMutex.unlock();
 
     requestRepaint();
 }
 
-void AmanWindow::drawContent(HWND hwnd) {
-    CRect clientRect;
-    int winWidth, winHeight;
+void AmanWindow::drawContent(HDC hdc, CRect windowRect) {
+    FillRect(hdc, &windowRect, AMAN_BRUSH_MAIN_BACKGROUND);
 
-    GetClientRect(hwnd, &clientRect);
-    winWidth = clientRect.right - clientRect.left;
-    winHeight = clientRect.bottom - clientRect.top;
-
-    PAINTSTRUCT ps;
-    HDC hDC = BeginPaint(hwnd, &ps);
-    HDC memdc = CreateCompatibleDC(hDC);
-    HBITMAP hBmp = CreateCompatibleBitmap(hDC, winWidth, winHeight);
-    SelectObject(memdc, hBmp);
-
-    // Draw stuff ///////////////////////////////////
-    std::time_t t = std::time(nullptr);
-    long int now = static_cast<long int>(t);
-
-    // Draw tools
-    FillRect(memdc, &clientRect, AMAN_BRUSH_MAIN_BACKGROUND);
-
-    renderTimelinesMutex.lock(); // Wait for potential pointer update to complete
-    CRect rectangle;
-    for (AmanTimeline* timeline : gpCurrentTimelines) {
-        rectangle = AmanTimelineView::render(timeline, clientRect, memdc, rectangle.right);
+    // This code runs on the window's thread, so we must make sure
+    // the main thread is not currently writing to the shared AmanTimeline-vector
+    renderTimelinesMutex.lock(); 
+    CRect lastTimelineArea;
+    for (AmanTimeline* timeline : currentTimelines) {
+        lastTimelineArea = AmanTimelineView::render(timeline, windowRect, hdc, lastTimelineArea.right);
     }
     renderTimelinesMutex.unlock();
 
-    // Menu
-    titleBar->render(clientRect, memdc);
-
-    BitBlt(hDC, 0, 0, winWidth, winHeight, memdc, 0, 0, SRCCOPY);
-    DeleteObject(hBmp);
-    DeleteDC(memdc);
-    DeleteDC(hDC);
-    EndPaint(hwnd, &ps);
+    titleBar->render(windowRect, hdc);
 }
 
 AmanTimeline* AmanWindow::getTimelineAt(const std::vector<AmanTimeline*>& timelines, CPoint cursorPosition) {

@@ -26,7 +26,7 @@ private:
     AmanController* controller;
     TitleBar* titleBar;
 
-    std::vector<AmanTimeline*> gpCurrentTimelines;
+    std::vector<AmanTimeline*> currentTimelines;
     std::mutex renderTimelinesMutex;
 
     int originalHeight;
@@ -36,5 +36,5 @@ private:
     void mouseMoved(CPoint cursorPosition) override;
     void mouseWheelSrolled(CPoint cursorPosition, short delta) override;
     void windowClosed() override;
-    void drawContent(HWND hwnd) override;
+    void drawContent(HDC hdc, CRect windowRect) override;
 };

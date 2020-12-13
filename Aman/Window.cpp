@@ -124,15 +124,15 @@ LRESULT CALLBACK Window::handleMessage(UINT message, WPARAM wParam, LPARAM lPara
     } break;
     case WM_SIZING: {
         InvalidateRect(hwnd, NULL, FALSE);
-        drawContent(hwnd);
+        render(hwnd);
     } break;
     case WM_SIZE: {
         InvalidateRect(hwnd, NULL, FALSE);
-        drawContent(hwnd);
+        render(hwnd);
     } break;
     case WM_PAINT: {
         InvalidateRect(hwnd, NULL, FALSE);
-        drawContent(hwnd);
+        render(hwnd);
     } break;
     case WM_CLOSE: {
         DestroyWindow(hwnd);
@@ -162,6 +162,29 @@ LRESULT CALLBACK Window::handleMessage(UINT message, WPARAM wParam, LPARAM lPara
         return DefWindowProc(hwnd, message, wParam, lParam);
     }
     return 0;
+}
+
+void Window::render(HWND hwnd) {
+    CRect clientRect;
+    int winWidth, winHeight;
+
+    GetClientRect(hwnd, &clientRect);
+    winWidth = clientRect.right - clientRect.left;
+    winHeight = clientRect.bottom - clientRect.top;
+
+    PAINTSTRUCT ps;
+    HDC hDC = BeginPaint(hwnd, &ps);
+    HDC memdc = CreateCompatibleDC(hDC);
+    HBITMAP hBmp = CreateCompatibleBitmap(hDC, winWidth, winHeight);
+    SelectObject(memdc, hBmp);
+
+    drawContent(memdc, clientRect);
+
+    BitBlt(hDC, 0, 0, winWidth, winHeight, memdc, 0, 0, SRCCOPY);
+    DeleteObject(hBmp);
+    DeleteDC(memdc);
+    DeleteDC(hDC);
+    EndPaint(hwnd, &ps);
 }
 
 void Window::moveWindowBy(CPoint delta) {
