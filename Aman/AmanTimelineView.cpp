@@ -172,13 +172,8 @@ void AmanTimelineView::drawAircraftChain(HDC hdc, int timeNow, int xStart, int y
         SelectObject(hdc, brush);
         oldTextColor = SetTextColor(hdc, defaultColor);
 
-        COLORREF callsignColor;
-
-        if (aircraft.viaFixIndex > -1 && aircraft.viaFixIndex < N_VIA_FIX_COLORS) {
-            callsignColor = VIA_FIX_COLORS[aircraft.viaFixIndex];
-        } else {
-            callsignColor = defaultColor;
-        }
+        bool hasKnownViaFix = aircraft.viaFixIndex > -1 && aircraft.viaFixIndex < N_VIA_FIX_COLORS;
+        COLORREF directRoutingColor = hasKnownViaFix ? VIA_FIX_COLORS[aircraft.viaFixIndex] : defaultColor;
 
         // Left side of timeline
         if (left) {
@@ -235,10 +230,10 @@ void AmanTimelineView::drawAircraftChain(HDC hdc, int timeNow, int xStart, int y
 
         drawMultiColorTextLine(hdc, rect, {
             {4, false, defaultColor, aircraft.arrivalRunway},
-            {9, false, callsignColor, aircraft.callsign},
+            {9, false, defaultColor, aircraft.callsign},
             {5, false, defaultColor, aircraft.icaoType},
             {2, false, defaultColor, {aircraft.wtc}},
-            {7, false, defaultColor, nextFix},
+            {7, false, directRoutingColor, nextFix},
             {3, false, defaultColor, std::to_string(minutesBehindPreceeding)},
             {4, true, defaultColor, std::to_string(remainingDistance)}
         });
