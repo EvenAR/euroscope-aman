@@ -10,7 +10,7 @@
 
 TitleBar::TitleBar() {}
 
-void TitleBar::render(CRect clientRect, HDC memdc) {
+CRect TitleBar::render(CRect clientRect, HDC memdc) {
     int buttonMargin = 5;
     int buttonSize = 10;
 
@@ -47,6 +47,8 @@ void TitleBar::render(CRect clientRect, HDC memdc) {
     SelectObject(memdc, oldBrush);
     SelectObject(memdc, oldPen);
     SetBkMode(memdc, oldBackground);
+
+    return this->titleBarRect;
 }
 
 void TitleBar::mousePressed(CPoint cursorPosition) {

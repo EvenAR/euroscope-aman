@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 class TitleBar;
 class AmanWindow;
@@ -16,7 +17,8 @@ public:
     void mouseReleased(CPoint cursorPosition);
     void mouseMoved(CPoint cursorPosition);
     void mouseWheelSrolled(CPoint cursorPosition, short delta);
-    void dataUpdated(const std::vector<AmanTimeline*>& timelines);
+    void dataUpdated();
+    void toggleTimeline(const std::string& id);
 
     ~AmanController();
 
@@ -29,4 +31,5 @@ private:
     AmanPlugIn* amanPlugin; // Model
     AmanWindow* amanWindow; // View1
     TitleBar* titleBar;
+    std::vector<std::string> activeTimelines;
 };

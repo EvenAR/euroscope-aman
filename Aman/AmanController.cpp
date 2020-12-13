@@ -35,14 +35,29 @@ AmanController::AmanController(AmanPlugIn* plugin) {
 
 void AmanController::openWindow() {
     if (this->amanWindow == NULL) {
-        this->amanWindow = new AmanWindow(this, titleBar);
+        this->amanWindow = new AmanWindow(this, titleBar, amanPlugin->getAvailableIds());
     }
 }
 
-void AmanController::dataUpdated(const std::vector<AmanTimeline*>& timelines) {
+void AmanController::dataUpdated() {
     if (this->amanWindow != NULL) {
+        auto timelines = this->amanPlugin->getTimelines(activeTimelines);
         this->amanWindow->update(timelines);
     }
+}
+
+void AmanController::toggleTimeline(const std::string& id) {
+    bool isActive = std::find(activeTimelines.begin(), activeTimelines.end(), id) != activeTimelines.end();
+
+    if (isActive) {
+        activeTimelines.erase(
+            std::remove(activeTimelines.begin(), activeTimelines.end(), id),
+            activeTimelines.end()
+        );
+    } else {
+        activeTimelines.push_back(id);
+    }
+    dataUpdated();
 }
 
 void AmanController::mousePressed(CPoint cursorPosition) { titleBar->mousePressed(cursorPosition); }
@@ -65,7 +80,7 @@ void AmanController::mouseMoved(CPoint cursorPosition) {
 }
 
 void AmanController::mouseWheelSrolled(CPoint cursorPosition, short delta) {
-    auto& allTimelines = this->amanPlugin->getTimelines();
+    auto allTimelines = this->amanPlugin->getTimelines(activeTimelines);
     auto timelinePointedAt = this->amanWindow->getTimelineAt(allTimelines, cursorPosition);
     if (timelinePointedAt) {
         auto currentRange = timelinePointedAt->getRange();
@@ -74,7 +89,7 @@ void AmanController::mouseWheelSrolled(CPoint cursorPosition, short delta) {
 
         if (!limitReached) {
             timelinePointedAt->setRange(newRange);
-            dataUpdated(allTimelines);
+            dataUpdated();
         }
     }
 }

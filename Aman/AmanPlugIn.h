@@ -1,7 +1,8 @@
 #pragma once
 #include <string>
 #include <vector>
-
+#include <memory>
+#include <set>
 #include "EuroScopePlugIn.h"
 
 using namespace EuroScopePlugIn;
@@ -12,10 +13,13 @@ class AmanTimeline;
 class AmanPlugIn : public CPlugIn {
 public:
     AmanPlugIn();
-    const std::vector<AmanTimeline*>& getTimelines();
+    std::set<std::string> getAvailableIds();
+    std::shared_ptr<std::vector<AmanTimeline*>> getTimelines(std::vector<std::string>& ids);
     virtual ~AmanPlugIn();
 
 private:
+    std::string pluginDirectory;
+
     // EuroScope events:
     virtual void OnTimer(int Counter);
     virtual bool OnCompileCommand(const char* sCommandLine);
@@ -28,7 +32,8 @@ private:
     void addTimeline(std::string finalFixes, std::string viaFixes);
     bool removeTimeline(int id);
 
+    void loadTimelines();
     void saveToSettings();
-
+    
     static std::vector<std::string> splitString(const std::string& string, const char delim);
 };

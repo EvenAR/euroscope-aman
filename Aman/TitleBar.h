@@ -10,7 +10,7 @@ class AmanController;
 class TitleBar : public EventEmitter {
 public:
     TitleBar();
-    void render(CRect clientRect, HDC memdc);
+    CRect render(CRect clientRect, HDC memdc);
     void mousePressed(CPoint cursorPosition);
 
     ~TitleBar();
