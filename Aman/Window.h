@@ -11,15 +11,16 @@ public:
     void resizeWindowBy(CPoint delta);
 
 protected:
-    virtual void mousePressed(CPoint cursorPosition) {};
-    virtual void mouseReleased(CPoint cursorPosition) {};
-    virtual void mouseMoved(CPoint cursorPosition) {};
-    virtual void mouseWheelSrolled(CPoint cursorPosition, short delta) {};
+    HWND hwnd;
+    void requestRepaint();
+
+    // Should be overridden by child class:
+    virtual void mousePressed(CPoint cursorPosClient) {};
+    virtual void mouseReleased(CPoint cursorPosClient) {};
+    virtual void mouseMoved(CPoint cursorPosClient) {};
+    virtual void mouseWheelSrolled(CPoint cursorPosClient, short delta) {};
     virtual void windowClosed() {};
     virtual void drawContent(HDC hdc, CRect clientRect) {};
-
-    void requestRepaint();
-    HWND hwnd;
 
 private:
     const char* className;

@@ -11,7 +11,14 @@ public:
     static CRect getArea(AmanTimeline* timeline, CRect clientRect, int i);
 
 private:
+    struct TextSegment {
+        size_t width;
+        bool rightAligned;
+        COLORREF color;
+        std::string text;
+    };
+
     static void drawAircraftChain(HDC hdc, int timeNow, int xStart, int yStart, float pixelsPerSec, bool left, std::vector<AmanAircraft> aircraftList);
-    static void drawMultiColorTextLine(HDC hdc, CRect rect, std::vector<std::tuple<int, bool, COLORREF, std::string>> texts);
+    static void drawMultiColorText(HDC hdc, CPoint pt, std::vector<TextSegment> texts, bool vertical = false);
 };
 

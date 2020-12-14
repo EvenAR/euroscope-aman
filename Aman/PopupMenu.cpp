@@ -2,30 +2,28 @@
 #include "PopupMenu.h"
 #include "Constants.h"
 
-PopupMenu::PopupMenu(std::vector<std::string> items) {
-    this->items = items;
+PopupMenu::PopupMenu(
+    const std::string& name,
+    std::vector<std::string> options,
+    std::function<void(const std::string& clickedItem)> onClick
+) {
+    this->name = name;
+    this->items = options;
+    this->onClick = onClick;
 };
 
-CRect PopupMenu::render(HDC hdc, CPoint pt, const std::vector<std::string>& selectedValues) {
+CRect PopupMenu::render(HDC hdc, CPoint pt) {
     CSize popupSize = calculateSize(hdc);
     CRect menuRect = { pt.x, pt.y, pt.x + popupSize.cx, pt.y + popupSize.cy };
-    FillRect(hdc, &menuRect, AMAN_BRUSH_TIMELINE_AHEAD);
+    FillRect(hdc, &menuRect, AMAN_BRUSH_MENU_BACKGROUND);
 
     CRect rect = { pt.x, pt.y, pt.x + popupSize.cx, pt.y + popupSize.cy };
     rect.MoveToXY(pt);
 
-    auto oldObject = SelectObject(hdc, AMAN_LEGEND_FONT);
-    auto oldTextColor = SetTextColor(hdc, AMAN_COLOR_MENU_TEXT);
-    auto oldBkColor = SetBkColor(hdc, AMAN_COLOR_MENU_TEXT_BACKGROUND_HOVER);
-
     for (int i = 0; i < items.size(); i++) {
-        CRect previous = renderMenuItem(hdc, items[i].c_str(), rect, i, selectedValues);
+        CRect previous = renderMenuItem(hdc, items[i].c_str(), rect, i);
         rect.MoveToY(previous.bottom);
     }
-
-    SelectObject(hdc, oldObject);
-    SetTextColor(hdc, oldTextColor);
-    SetBkColor(hdc, oldBkColor);
 
     return menuRect;
 }
@@ -45,19 +43,17 @@ CSize PopupMenu::calculateSize(HDC hdc) {
     return { maxWidth, nextItemPos.y };
 };
 
-
-void PopupMenu::update(const std::vector<std::string>& activeItems) {
-    this->activeItems = activeItems;
-}
-
-const std::string& PopupMenu::getClickedItem(CPoint pt) {
-    for (auto& item : interactiveAreas) {
-        if(item.second.PtInRect(pt)) return items[item.first];
+bool PopupMenu::onMouseClick(CPoint pt) {
+    for (auto& area : clickAreas) {
+        if(area.second.PtInRect(pt)) {
+            onClick(items[area.first]);
+            return true;
+        }
     }
 }
 
 bool PopupMenu::onMouseHover(CPoint pt) {
-    for (auto& item : interactiveAreas) {
+    for (auto& item : clickAreas) {
         if (item.second.PtInRect(pt)) {
             bool shouldRedraw = item.first != lastHoveredIndex;
             this->lastHoveredIndex = item.first;
@@ -68,17 +64,25 @@ bool PopupMenu::onMouseHover(CPoint pt) {
     return false;
 }
 
-CRect PopupMenu::renderMenuItem(HDC hdc, const std::string& text, CRect area, int index, const std::vector<std::string>& selectedValues) {
-    bool isActive = std::find(selectedValues.begin(), selectedValues.end(), text) != selectedValues.end();
-    auto label = isActive ? "x " + text : "  " + text;
+CRect PopupMenu::renderMenuItem(HDC hdc, const std::string& text, CRect area, int index) {
+    bool isActive = std::find(activeItems.begin(), activeItems.end(), text) != activeItems.end();
+    auto label = (isActive ? "x " : "  ") + text;
 
     int minWidth = area.Width();
     bool isHovered = index == lastHoveredIndex;
+
     auto oldBkMode = SetBkMode(hdc, isHovered ? OPAQUE : TRANSPARENT);
+
     DrawText(hdc, label.c_str(), label.length(), &area, DT_LEFT | DT_CALCRECT);
     area.right = area.left + minWidth;
     DrawText(hdc, label.c_str(), label.length(), &area, DT_LEFT);
-    interactiveAreas[index] = { area };
+    clickAreas[index] = { area };
+
     SetBkMode(hdc, oldBkMode);
+
     return area;
+}
+
+void PopupMenu::setActiveItems(const std::vector<std::string>& activeItems) {
+    this->activeItems = activeItems;
 }

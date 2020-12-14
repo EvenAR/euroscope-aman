@@ -1,12 +1,10 @@
 #include "stdafx.h"
 
-
 #include <string>
 
 #include "AmanController.h"
 #include "Constants.h"
 #include "TitleBar.h"
-
 
 TitleBar::TitleBar() {}
 
@@ -23,7 +21,7 @@ CRect TitleBar::render(CRect clientRect, HDC memdc) {
                               clientRect.Width() - buttonSize - buttonMargin * 2, buttonMargin + buttonSize };
 
     // Start drawing
-    FillRect(memdc, &this->titleBarRect, AMAN_BRUSH_MENU_BACKGROUND);
+    FillRect(memdc, &this->titleBarRect, AMAN_BRUSH_TITLE_BAR_BACKGROUND);
 
     HBRUSH oldBrush = (HBRUSH)SelectObject(memdc, GetStockObject(NULL_BRUSH));
     HPEN oldPen = (HPEN)SelectObject(memdc, AMAN_WHITE_PEN);

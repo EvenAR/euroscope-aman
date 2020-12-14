@@ -1,20 +1,27 @@
 #include "stdafx.h"
-
-#include <algorithm> 
-
 #include "AmanController.h"
 #include "AmanTimelineView.h"
 #include "AmanWindow.h"
 #include "TitleBar.h"
 #include "AmanTimeline.h"
 #include "PopupMenu.h"
+#include "MenuBar.h"
+
+#include <algorithm> 
 
 AmanWindow::AmanWindow(AmanController* controller, TitleBar* titleBar, std::set<std::string> ids) : Window("AmanWindow", "AMAN") {
     this->controller = controller;
     this->titleBar = titleBar;
+    this->menuBar = new MenuBar();
 
     std::vector<std::string> options(ids.begin(), ids.end());
-    this->popupMenu = new PopupMenu(options);
+
+    static auto onSelection = [controller](const std::string& timelineId) {
+        controller->toggleTimeline(timelineId);
+    };
+
+    this->profilesMenu = std::make_shared<PopupMenu>("Load", options, onSelection);
+    this->menuBar->addPopupMenu(profilesMenu);
 }
 
 AmanWindow::~AmanWindow() {}
@@ -27,70 +34,39 @@ void AmanWindow::update(std::shared_ptr<std::vector<AmanTimeline*>> timelines) {
     requestRepaint();
 }
 
-void AmanWindow::drawContent(HDC hdc, CRect windowRect) {
-    interactiveAreas.clear();
-    FillRect(hdc, &windowRect, AMAN_BRUSH_MAIN_BACKGROUND);
+void AmanWindow::drawContent(HDC hdc, CRect clientRect) {
+    FillRect(hdc, &clientRect, AMAN_BRUSH_MAIN_BACKGROUND);
 
     CRect lastTimelineArea;
     std::vector<std::string> timelineIds;
 
     // This code runs on the window's thread, so we must make sure
     // the main thread is not currently writing to the shared AmanTimeline-vector
-    renderTimelinesMutex.lock(); 
+    renderTimelinesMutex.lock();
+    timelineView = clientRect;
+    timelineView.top += 35;
     for (AmanTimeline* timeline : *timelinesToRender) {
-        lastTimelineArea = AmanTimelineView::render(timeline, windowRect, hdc, lastTimelineArea.right);
+        lastTimelineArea = AmanTimelineView::render(timeline, timelineView, hdc, lastTimelineArea.right);
         timelineIds.push_back(timeline->getIdentifier());
     }
     renderTimelinesMutex.unlock();
 
-    CRect titleBarRect = titleBar->render(windowRect, hdc);
+    CRect titleBarRect = titleBar->render(clientRect, hdc);
+    titleBarRect.MoveToY(titleBarRect.bottom);
+    titleBarRect.bottom = titleBarRect.top + 15;
 
-    // Menu bar
-    CRect menuBarRect{ windowRect.left, windowRect.top + titleBarRect.Height(), windowRect.right, windowRect.top + titleBarRect.Height() + 13 };
-    FillRect(hdc, &menuBarRect, AMAN_BRUSH_TIMELINE_AHEAD);
-    renderButton(hdc, "Open", menuBarRect, OPEN_BUTTON);
-    
-    if (showOpenMenu) {
-        CRect menuArea = popupMenu->render(hdc, { menuBarRect.left, menuBarRect.bottom }, timelineIds);
-        interactiveAreas[PROFILES_MENU] = { menuArea };
-    }
-
-}
-
-CRect AmanWindow::renderButton(HDC hdc, const std::string& text, CRect area, AREA_ID id) {
-    // Renders the button and saves its bounding rectangle for later click detection
-
-    SelectObject(hdc, AMAN_LEGEND_FONT);
-    SetTextColor(hdc, AMAN_COLOR_UNTRACKED);
-
-    DrawText(hdc, text.c_str(), text.length(), &area, DT_LEFT | DT_CALCRECT);
-    DrawText(hdc, text.c_str(), text.length(), &area, DT_LEFT);
-
-    interactiveAreas[id] = { area };
-
-    return area;
-}
-
-int AmanWindow::findButtonAt(CPoint point) {
-    for (auto& it : interactiveAreas) {
-        if (it.second.area.PtInRect(point)) {
-            return it.first;
-        }
-    }
-    return -1;
+    profilesMenu->setActiveItems(timelineIds);
+    this->menuBar->render(hdc, titleBarRect);
 }
 
 AmanTimeline* AmanWindow::getTimelineAt(std::shared_ptr<std::vector<AmanTimeline*>> timelines, CPoint cursorPosition) {
-    CRect windowRect;
-    GetWindowRect(hwnd, &windowRect);
-    ScreenToClient(hwnd, &cursorPosition);
-
-    CRect coveringArea;
+    int nextOffsetX = 0;
     for (AmanTimeline* timeline : *timelines) {
-        coveringArea = AmanTimelineView::getArea(timeline, windowRect, coveringArea.right);
-        if (coveringArea.PtInRect(cursorPosition)) {
+        CRect area = AmanTimelineView::getArea(timeline, timelineView, nextOffsetX);
+        if (area.PtInRect(cursorPosition)) {
             return timeline;
         }
+        nextOffsetX = area.right;
     }
     return nullptr;
 }
@@ -116,45 +92,30 @@ bool AmanWindow::isExpanded() {
     return windowRect.Height() != AMAN_TITLEBAR_HEIGHT;
 }
 
-void AmanWindow::mousePressed(CPoint cursorPosition) {
-    controller->mousePressed(cursorPosition);
-
-    int pressedBtn = findButtonAt(cursorPosition);
-
-    switch (pressedBtn) {
-        case OPEN_BUTTON: {
-            showOpenMenu = !showOpenMenu;
-            requestRepaint();
-        }
-        break;
-        case PROFILES_MENU: {
-            auto clicked = popupMenu->getClickedItem(cursorPosition);
-            controller->toggleTimeline(clicked);
-        }
-        break;
-        default: {
-            showOpenMenu = false;
-            requestRepaint();
-        }
-        break;
-    }
-}
-
-void AmanWindow::mouseReleased(CPoint cursorPosition) {
-    controller->mouseReleased(cursorPosition);
-}
-
-void AmanWindow::mouseMoved(CPoint cursorPosition) {
-    controller->mouseMoved(cursorPosition);
-
-    ScreenToClient(hwnd, &cursorPosition);
-    if (popupMenu->onMouseHover(cursorPosition)) {
+void AmanWindow::mousePressed(CPoint cursorPosClient) {
+    controller->mousePressed(cursorPosClient);
+    if (menuBar->onMouseClick(cursorPosClient)) {
         requestRepaint();
     }
 }
 
-void AmanWindow::mouseWheelSrolled(CPoint cursorPosition, short delta) {
-    controller->mouseWheelSrolled(cursorPosition, delta);
+void AmanWindow::mouseReleased(CPoint cursorPosClient) {
+    controller->mouseReleased(cursorPosClient);
+}
+
+void AmanWindow::mouseMoved(CPoint cursorPosClient) {
+    if (menuBar->onMouseMove(cursorPosClient)) {
+        requestRepaint();
+    }
+    ClientToScreen(hwnd, &cursorPosClient);
+    controller->mouseMoved(cursorPosClient);
+}
+
+void AmanWindow::mouseWheelSrolled(CPoint cursorPosClient, short delta) {
+    controller->mouseWheelSrolled(cursorPosClient, delta);
+    if (menuBar->onMouseScroll(delta)) {
+        requestRepaint();
+    }
 }
 
 void AmanWindow::windowClosed() {

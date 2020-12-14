@@ -23,7 +23,8 @@ const COLORREF VIA_FIX_COLORS[N_VIA_FIX_COLORS] = {
 };
 
 static const HBRUSH AMAN_BRUSH_MAIN_BACKGROUND = CreateSolidBrush(RGB(13, 9, 13));
-static const HBRUSH AMAN_BRUSH_MENU_BACKGROUND = CreateSolidBrush(RGB(72, 72, 72));
+static const HBRUSH AMAN_BRUSH_TITLE_BAR_BACKGROUND = CreateSolidBrush(RGB(72, 72, 72));
+static const HBRUSH AMAN_BRUSH_MENU_BACKGROUND = CreateSolidBrush(RGB(90, 90, 90));
 static const HBRUSH AMAN_BRUSH_MENU_ICON_FILL = CreateSolidBrush(RGB(255, 255, 255));
 static const HBRUSH AMAN_BRUSH_WINDOW_BUTTON_BACKGROUND = CreateSolidBrush(RGB(200, 200, 200));
 static const HBRUSH AMAN_BRUSH_WINDOW_BUTTON_HOVERED_BACKGROUND = CreateSolidBrush(RGB(255, 255, 255));
@@ -41,6 +42,7 @@ const HFONT AMAN_TIME_FONT = CreateFont(13, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 3, 2
 const HFONT AMAN_LABEL_FONT = CreateFont(13, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 3, 2, 1, 49, "EuroScope");
 const HFONT AMAN_FIX_FONT = CreateFont(15, 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 3, 2, 1, 49, "EuroScope");
 const HFONT AMAN_LEGEND_FONT = CreateFont(13, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 3, 2, 1, 49, "EuroScope");
+const HFONT AMAN_MENU_FONT = CreateFont(15, 0, 0, 0, FW_NORMAL, 0, 0, 0, 0, 3, 2, 1, 49, "EuroScope");
 
 const int AMAN_TITLEBAR_HEIGHT = 20;
 const int AMAN_TIMELINE_WIDTH = 50;

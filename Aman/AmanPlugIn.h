@@ -32,7 +32,7 @@ private:
     void addTimeline(std::string finalFixes, std::string viaFixes);
     bool removeTimeline(int id);
 
-    void loadTimelines();
+    void loadTimelines(const std::string& filename);
     void saveToSettings();
     
     static std::vector<std::string> splitString(const std::string& string, const char delim);

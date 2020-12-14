@@ -4,7 +4,6 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
-#include <tuple>
 
 #include "AmanAircraft.h"
 #include "AmanTimeline.h"
@@ -20,7 +19,7 @@ CRect AmanTimelineView::getArea(AmanTimeline* timeline, CRect clientRect, int xO
         totalWidth = AMAN_WIDTH;
     }
 
-    return CRect(xOffset, AMAN_TITLEBAR_HEIGHT, xOffset + totalWidth, clientRect.bottom);
+    return CRect(xOffset, clientRect.top, xOffset + totalWidth, clientRect.bottom);
 }
 
 CRect AmanTimelineView::render(AmanTimeline* timeline, CRect clientRect, HDC hdc, int xOffset) {
@@ -41,7 +40,7 @@ CRect AmanTimelineView::render(AmanTimeline* timeline, CRect clientRect, HDC hdc
     // Timeline bar
     int secToNextMin = 60 - (unixTimestamp % 60);
 
-    CRect futureBackground = { timelineStartX, 0, timelineStartX + AMAN_TIMELINE_WIDTH, myTotalArea.bottom };
+    CRect futureBackground = { timelineStartX, myTotalArea.top, timelineStartX + AMAN_TIMELINE_WIDTH, myTotalArea.bottom };
     FillRect(hdc, &futureBackground, AMAN_BRUSH_TIMELINE_AHEAD);
     CRect pastBackground = { timelineStartX, myTotalArea.bottom - AMAN_TIMELINE_REALTIME_OFFSET,
                             timelineStartX + AMAN_TIMELINE_WIDTH, myTotalArea.bottom };
@@ -131,15 +130,15 @@ CRect AmanTimelineView::render(AmanTimeline* timeline, CRect clientRect, HDC hdc
     DrawText(hdc, text.c_str(), text.length(), &rect, DT_CENTER);
 
     // Draw color legend
-    SelectObject(hdc, AMAN_LEGEND_FONT);
-    std::vector<std::tuple<int, bool, COLORREF, std::string>> legendEntries;
-    for (int i = 0; i < timeline->getViaFixes().size(); i++) {
-        legendEntries.push_back({ 6, false, VIA_FIX_COLORS[i], timeline->getViaFixes().at(i) });
-    }
-    drawMultiColorTextLine(hdc,
-        { myTotalArea.left + (timeline->isDual() ? 0 : AMAN_TIMELINE_WIDTH + 1), myTotalArea.top,
-         myTotalArea.right, myTotalArea.bottom },
-        legendEntries);
+    if (!timeline->getViaFixes().empty()) {
+        SelectObject(hdc, AMAN_LEGEND_FONT);
+        std::vector<TextSegment> legendEntries({{ 6, false, AMAN_COLOR_FIX_TEXT, "Via:" }});
+        for (int i = 0; i < timeline->getViaFixes().size(); i++) {
+            legendEntries.push_back({ 6, false, VIA_FIX_COLORS[i], timeline->getViaFixes().at(i) });
+        }
+        CPoint legendPos = myTotalArea.TopLeft();
+        drawMultiColorText(hdc, legendPos, legendEntries, true);
+    }   
 
     // Restore settings
     SetTextColor(hdc, oldColor);
@@ -228,7 +227,7 @@ void AmanTimelineView::drawAircraftChain(HDC hdc, int timeNow, int xStart, int y
         int minutesBehindPreceeding = round(aircraft.secondsBehindPreceeding / 60);
         int remainingDistance = round(aircraft.distLeft);
 
-        drawMultiColorTextLine(hdc, rect, {
+        drawMultiColorText(hdc, rect.TopLeft(), {
             {4, false, defaultColor, aircraft.arrivalRunway},
             {9, false, defaultColor, aircraft.callsign},
             {5, false, defaultColor, aircraft.icaoType},
@@ -248,22 +247,18 @@ void AmanTimelineView::drawAircraftChain(HDC hdc, int timeNow, int xStart, int y
     }
 }
 
-void AmanTimelineView::drawMultiColorTextLine(HDC hdc, CRect rect,
-    std::vector<std::tuple<int, bool, COLORREF, std::string>> texts) {
+void AmanTimelineView::drawMultiColorText(HDC hdc, CPoint pt, std::vector<TextSegment> texts, bool vertical) {
+    CRect startRect;
+    startRect.MoveToXY(pt);
     for each (auto item in texts) {
-        auto& width = std::get<0>(item);
-        auto& rightAligned = std::get<1>(item);
-        auto& color = std::get<2>(item);
-        auto& text = std::get<3>(item);
-
         std::stringstream ss;
-        ss << (rightAligned ? std::right : std::left) << std::setw(width) << text;
+        ss << (item.rightAligned ? std::right : std::left) << std::setw(item.width) << item.text;
 
         std::string outputText = ss.str();
 
-        SetTextColor(hdc, color);
-        DrawText(hdc, outputText.c_str(), outputText.length(), &rect, DT_LEFT | DT_CALCRECT);
-        DrawText(hdc, outputText.c_str(), outputText.length(), &rect, DT_LEFT);
-        rect.MoveToX(rect.right);
+        SetTextColor(hdc, item.color);
+        DrawText(hdc, outputText.c_str(), outputText.length(), &startRect, DT_LEFT | DT_CALCRECT);
+        DrawText(hdc, outputText.c_str(), outputText.length(), &startRect, DT_LEFT);
+        vertical ? startRect.MoveToY(startRect.bottom) : startRect.MoveToX(startRect.right);
     }
 }

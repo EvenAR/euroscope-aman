@@ -12,11 +12,7 @@ class AmanTimeline;
 class AmanRenderer;
 class TitleBar;
 class PopupMenu;
-
-
-struct ClickableElement {
-    CRect area;
-};
+class MenuBar;
 
 class AmanWindow : public Window {
 
@@ -32,32 +28,23 @@ public:
     AmanTimeline* getTimelineAt(std::shared_ptr<std::vector<AmanTimeline*>> timelines, CPoint cursorPosition);
 
 private:
-    enum AREA_ID {
-        OPEN_BUTTON,
-        PROFILES_MENU
-    };
+
 
     AmanController* controller;
     TitleBar* titleBar;
-    PopupMenu* popupMenu;
+    MenuBar* menuBar;
+    std::shared_ptr<PopupMenu> profilesMenu;
 
     std::shared_ptr<std::vector<AmanTimeline*>> timelinesToRender;
     std::mutex renderTimelinesMutex;
 
     int originalHeight;
+    CRect timelineView;
 
-    void mousePressed(CPoint cursorPosition) override;
-    void mouseReleased(CPoint cursorPosition) override;
-    void mouseMoved(CPoint cursorPosition) override;
-    void mouseWheelSrolled(CPoint cursorPosition, short delta) override;
+    void mousePressed(CPoint cursorPosClient) override;
+    void mouseReleased(CPoint cursorPosClient) override;
+    void mouseMoved(CPoint cursorPosClient) override;
+    void mouseWheelSrolled(CPoint cursorPosClient, short delta) override;
     void windowClosed() override;
-    void drawContent(HDC hdc, CRect windowRect) override;
-
-    CRect renderButton(HDC hdc, const std::string& text, CRect area, AREA_ID id);
-
-    std::unordered_map<AREA_ID, ClickableElement> interactiveAreas;
-
-    int findButtonAt(CPoint point);
-
-    bool showOpenMenu;
+    void drawContent(HDC hdc, CRect clientRect) override;
 };

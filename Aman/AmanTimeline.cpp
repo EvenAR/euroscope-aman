@@ -6,13 +6,15 @@
 #include "AmanAircraft.h"
 #include "AmanTimeline.h"
 
-AmanTimeline::AmanTimeline(std::vector<std::string> fixes, std::vector<std::string> viaFixes) {
+AmanTimeline::AmanTimeline(std::vector<std::string> fixes, std::vector<std::string> viaFixes, const std::string& alias) {
     this->fixes = fixes;
     this->viaFixes = viaFixes;
     this->aircraftList = std::vector<AmanAircraft>();
+    this->alias = alias;
 }
 
 std::string AmanTimeline::getIdentifier() {
+    if(!alias.empty()) return alias;
     switch (fixes.size()) {
     case 1:
         return fixes.at(0);

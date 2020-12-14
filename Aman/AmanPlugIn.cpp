@@ -28,6 +28,7 @@
 #define REMOVE_LAST_CHAR(str)                                                                                          \
     if (str.length() > 0)                                                                                              \
         str.pop_back();
+#define DISPLAY_WARNING(str) DisplayUserMessage("Aman", "Warning", str, true, true, true, true, false);
 
 AmanPlugIn* pMyPlugIn;
 AmanController* amanController;
@@ -40,7 +41,7 @@ AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE, "Arrival Manager", "1.4.0
     GetModuleFileNameA((HINSTANCE)&__ImageBase, fullPluginPath, sizeof(fullPluginPath));
     std::string fullPluginPathStr(fullPluginPath);
     this->pluginDirectory = fullPluginPathStr.substr(0, fullPluginPathStr.find_last_of("\\"));
-    loadTimelines();
+    loadTimelines("aman_profiles.json");
 }
 
 std::set<std::string> AmanPlugIn::getAvailableIds() {
@@ -191,13 +192,27 @@ void AmanPlugIn::saveToSettings() {
     pMyPlugIn->SaveDataToSettings("AMAN", "", toSave.c_str());
 }
 
-void AmanPlugIn::loadTimelines() {
-    std::ifstream file(pluginDirectory + "\\Aman.json");
+void AmanPlugIn::loadTimelines(const std::string& filename) {
+    std::ifstream file(pluginDirectory + "\\" + filename);
     std::string fileContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+    if (fileContent.empty()) {
+        DISPLAY_WARNING((filename + ": the JSON-file was not found or is empty").c_str());
+        return;
+    }
 
     using namespace rapidjson;
     Document document;
     document.Parse(fileContent.c_str());
+
+    if (document.HasParseError()) {
+        ParseErrorCode code = document.GetParseError();
+        size_t offset = document.GetErrorOffset();
+        std::string message = filename + ": error when parsing JSON at position " + std::to_string(offset) + ": '" + fileContent.substr(offset, 10) + "'";
+        DISPLAY_WARNING(message.c_str());
+        return;
+    }
+
     for (auto& v : document["profiles"].GetArray()) {
         auto object = v.GetObjectA();
         std::string alias = object["alias"].GetString();
@@ -214,7 +229,7 @@ void AmanPlugIn::loadTimelines() {
             }
         }
 
-        gTimelines.push_back(new AmanTimeline(finalFixes, viaFixes));
+        gTimelines.push_back(new AmanTimeline(finalFixes, viaFixes, alias));
     }
 }
 
@@ -228,7 +243,7 @@ void AmanPlugIn::addTimeline(std::string finalFixes, std::string viaFixes) {
     REMOVE_EMPTY(ids, nonEmptyFinalFixes);
     REMOVE_EMPTY(vias, nonEmptyViaFixes);
 
-    gTimelines.push_back(new AmanTimeline(nonEmptyFinalFixes, nonEmptyViaFixes));
+    gTimelines.push_back(new AmanTimeline(nonEmptyFinalFixes, nonEmptyViaFixes, ""));
 }
 
 bool AmanPlugIn::removeTimeline(int id) {

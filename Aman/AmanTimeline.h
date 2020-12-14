@@ -7,7 +7,7 @@ class AmanAircraft;
 
 class AmanTimeline {
 public:
-    AmanTimeline(std::vector<std::string> fixes, std::vector<std::string> viaFixes);
+    AmanTimeline(std::vector<std::string> fixes, std::vector<std::string> viaFixes, const std::string& alias);
     std::string getIdentifier();
     bool isDual();
     bool containsListForFix(std::string fixName);
@@ -24,7 +24,7 @@ public:
 
 private:
     int seconds = 3600;
-
+    std::string alias;
     std::vector<AmanAircraft> aircraftList;
     std::vector<std::string> viaFixes;
     std::vector<std::string> fixes;

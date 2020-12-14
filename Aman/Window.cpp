@@ -112,11 +112,14 @@ LRESULT Window::messageRouter(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 // The window procedure
 LRESULT CALLBACK Window::handleMessage(UINT message, WPARAM wParam, LPARAM lParam) {
     CRect windowRect;
-    CPoint cursorPosition;
+    CPoint cursorPosScreen;
     HINSTANCE hInstance = (HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE);
 
     GetWindowRect(hwnd, &windowRect);
-    GetCursorPos(&cursorPosition);
+    GetCursorPos(&cursorPosScreen);
+
+    CPoint cursorPosClient = cursorPosScreen;
+    ScreenToClient(hwnd, &cursorPosClient);
 
     switch (message) {
     case WM_DESTROY: {
@@ -141,21 +144,19 @@ LRESULT CALLBACK Window::handleMessage(UINT message, WPARAM wParam, LPARAM lPara
     } break;
     case WM_LBUTTONDOWN: {
         SetCapture(hwnd);
-        ScreenToClient(hwnd, &cursorPosition);
-        mousePressed(cursorPosition);
+        mousePressed(cursorPosClient);
     } break;
     case WM_LBUTTONUP: {
         ReleaseCapture();
-        mouseReleased(cursorPosition);
+        mouseReleased(cursorPosClient);
     } break;
     case WM_MOUSEMOVE: {
-        mouseMoved(cursorPosition);
-        ScreenToClient(hwnd, &cursorPosition);
+        mouseMoved(cursorPosClient);
     } break;
     case WM_MOUSEWHEEL: {
         short delta = GET_WHEEL_DELTA_WPARAM(wParam);
-        if (windowRect.PtInRect(cursorPosition)) {
-            mouseWheelSrolled(cursorPosition, delta);
+        if (windowRect.PtInRect(cursorPosScreen)) {
+            mouseWheelSrolled(cursorPosClient, delta);
         }
     } break;
     default:
