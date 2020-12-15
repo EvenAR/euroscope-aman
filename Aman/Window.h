@@ -23,8 +23,8 @@ protected:
     virtual void drawContent(HDC hdc, CRect clientRect) {};
 
 private:
-    const char* className;
-    const char* windowName;
+    std::string className;
+    std::string windowName;
 
     DWORD threadId;
 
@@ -36,5 +36,6 @@ private:
     void show(int nCmdShow);
     bool processNextMessage();
     void render(HWND hwnd);
+    bool exit;
 };
 

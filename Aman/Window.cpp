@@ -1,28 +1,31 @@
 #include "stdafx.h"
 #include "Window.h"
+#include <memory>
 
 Window::Window(const std::string& className, const std::string& windowName) {
-    this->className = className.c_str();
-    this->windowName = windowName.c_str();
+    this->className = className;
+    this->windowName = windowName;
 
     create();
     show(SW_SHOWNORMAL);
 
     // Thread responsible for updating the window
+    exit = false;
     CreateThread(0, NULL, lookForMessages, this, NULL, &threadId);
 }
 
 Window::~Window() {
-    if (HWND hWnd = FindWindow(className, NULL)) {
-        SendMessage(hWnd, WM_CLOSE, 0, 0);
-        WaitForSingleObject(&threadId, INFINITE);
-        TerminateThread(&threadId, 0);
-    }
+    exit = true;
+    //PostQuitMessage(0);
+    SendMessage(hwnd, WM_CLOSE, 0, 0);
+    WaitForSingleObject(&threadId, INFINITE);
+    int i  = 32;
+    //TerminateThread(&threadId, 0);
 }
 
 // Window thread procedure
 DWORD WINAPI Window::lookForMessages(LPVOID lpParam) {
-    Window* amanWindow = (Window*)lpParam;
+    auto amanWindow = (Window*)lpParam;
     while (true) {
         if (!amanWindow->processNextMessage()) break;
     }
@@ -32,12 +35,11 @@ DWORD WINAPI Window::lookForMessages(LPVOID lpParam) {
 bool Window::processNextMessage() {
     static MSG msg;
 
-   // if (!hwnd)
-        //throw std::runtime_error(std::string("Window not yet created"));
-
     if (::GetMessage(&msg, hwnd, 0, 0)) {
         ::TranslateMessage(&msg);
         ::DispatchMessage(&msg);
+    } else if(exit) {
+        return false;
     }
 
     return true;
@@ -53,7 +55,7 @@ bool Window::create() {
     WNDCLASSEX wc;
 
     wc.hInstance = hInstance;
-    wc.lpszClassName = className;
+    wc.lpszClassName = className.c_str();
     wc.lpfnWndProc = messageRouter;
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.cbSize = sizeof(WNDCLASSEX);
@@ -71,8 +73,8 @@ bool Window::create() {
 
     HWND hwnd = CreateWindowEx(
         WS_EX_TOPMOST,
-        className,
-        windowName,
+        className.c_str(),
+        windowName.c_str(),
         WS_POPUP,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
@@ -122,8 +124,12 @@ LRESULT CALLBACK Window::handleMessage(UINT message, WPARAM wParam, LPARAM lPara
     ScreenToClient(hwnd, &cursorPosClient);
 
     switch (message) {
+    case WM_CLOSE: {
+        DestroyWindow(hwnd);
+        UnregisterClass(className.c_str(), hInstance);
+    } break;
     case WM_DESTROY: {
-        PostQuitMessage(0);
+        windowClosed();
     } break;
     case WM_SIZING: {
         InvalidateRect(hwnd, NULL, FALSE);
@@ -136,11 +142,6 @@ LRESULT CALLBACK Window::handleMessage(UINT message, WPARAM wParam, LPARAM lPara
     case WM_PAINT: {
         InvalidateRect(hwnd, NULL, FALSE);
         render(hwnd);
-    } break;
-    case WM_CLOSE: {
-        DestroyWindow(hwnd);
-        UnregisterClass(className, hInstance);
-        windowClosed();
     } break;
     case WM_LBUTTONDOWN: {
         SetCapture(hwnd);

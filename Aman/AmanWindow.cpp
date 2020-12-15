@@ -9,10 +9,10 @@
 
 #include <algorithm> 
 
-AmanWindow::AmanWindow(AmanController* controller, TitleBar* titleBar, std::set<std::string> ids) : Window("AmanWindow", "AMAN") {
+AmanWindow::AmanWindow(AmanController* controller, std::shared_ptr<TitleBar> titleBar, std::set<std::string> ids) : Window("AmanWindow", "AMAN") {
     this->controller = controller;
     this->titleBar = titleBar;
-    this->menuBar = new MenuBar();
+    this->menuBar = std::make_shared<MenuBar>();
 
     std::vector<std::string> options(ids.begin(), ids.end());
 
@@ -26,7 +26,7 @@ AmanWindow::AmanWindow(AmanController* controller, TitleBar* titleBar, std::set<
 
 AmanWindow::~AmanWindow() {}
 
-void AmanWindow::update(std::shared_ptr<std::vector<AmanTimeline*>> timelines) {
+void AmanWindow::update(std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> timelines) {
     renderTimelinesMutex.lock(); // Wait for current render to complete
     timelinesToRender = timelines;
     renderTimelinesMutex.unlock();
@@ -45,7 +45,7 @@ void AmanWindow::drawContent(HDC hdc, CRect clientRect) {
     renderTimelinesMutex.lock();
     timelineView = clientRect;
     timelineView.top += 35;
-    for (AmanTimeline* timeline : *timelinesToRender) {
+    for (auto& timeline : *timelinesToRender) {
         lastTimelineArea = AmanTimelineView::render(timeline, timelineView, hdc, lastTimelineArea.right);
         timelineIds.push_back(timeline->getIdentifier());
     }
@@ -59,9 +59,9 @@ void AmanWindow::drawContent(HDC hdc, CRect clientRect) {
     this->menuBar->render(hdc, titleBarRect);
 }
 
-AmanTimeline* AmanWindow::getTimelineAt(std::shared_ptr<std::vector<AmanTimeline*>> timelines, CPoint cursorPosition) {
+std::shared_ptr<AmanTimeline> AmanWindow::getTimelineAt(std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> timelines, CPoint cursorPosition) {
     int nextOffsetX = 0;
-    for (AmanTimeline* timeline : *timelines) {
+    for (auto& timeline : *timelines) {
         CRect area = AmanTimelineView::getArea(timeline, timelineView, nextOffsetX);
         if (area.PtInRect(cursorPosition)) {
             return timeline;

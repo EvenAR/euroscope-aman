@@ -15,7 +15,6 @@
 #include <regex>
 #include <sstream>
 #include <string>
-#include <unordered_map>
 #include <vector>
 #include <fstream>
 
@@ -30,37 +29,39 @@
         str.pop_back();
 #define DISPLAY_WARNING(str) DisplayUserMessage("Aman", "Warning", str, true, true, true, true, false);
 
-AmanPlugIn* pMyPlugIn;
-AmanController* amanController;
-std::vector<AmanTimeline*> gTimelines;
-std::unordered_map<const char*, AmanAircraft> allAircraft;
-
 AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE, "Arrival Manager", "1.4.0", "Even Rognlien", "Open source") {
     // Find directory of this .dll
     char fullPluginPath[_MAX_PATH];
     GetModuleFileNameA((HINSTANCE)&__ImageBase, fullPluginPath, sizeof(fullPluginPath));
     std::string fullPluginPathStr(fullPluginPath);
-    this->pluginDirectory = fullPluginPathStr.substr(0, fullPluginPathStr.find_last_of("\\"));
+    pluginDirectory = fullPluginPathStr.substr(0, fullPluginPathStr.find_last_of("\\"));
+
     loadTimelines("aman_profiles.json");
+
+    amanController = std::make_shared<AmanController>(this);
+    amanController->openWindow();
+    amanController->dataUpdated();
+}
+
+AmanPlugIn::~AmanPlugIn() { 
+    int i = 0;
 }
 
 std::set<std::string> AmanPlugIn::getAvailableIds() {
     std::set<std::string> set;
-    for (auto timeline : gTimelines) {
+    for (auto timeline : timelines) {
         set.insert(timeline->getIdentifier());
     }
     return set;
 }
 
-AmanPlugIn::~AmanPlugIn() {}
-
 std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixName, std::vector<std::string> viaFixes) {
     long int timeNow = static_cast<long int>(std::time(nullptr)); // Current UNIX-timestamp in seconds
 
-    CRadarTarget asel = pMyPlugIn->RadarTargetSelectASEL();
+    CRadarTarget asel = RadarTargetSelectASEL();
     CRadarTarget rt;
     std::vector<AmanAircraft> aircraftList;
-    for (rt = pMyPlugIn->RadarTargetSelectFirst(); rt.IsValid(); rt = pMyPlugIn->RadarTargetSelectNext(rt)) {
+    for (rt = RadarTargetSelectFirst(); rt.IsValid(); rt = RadarTargetSelectNext(rt)) {
         float groundSpeed = rt.GetPosition().GetReportedGS();
         if (groundSpeed < 60) {
             continue;
@@ -119,8 +120,8 @@ std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixNa
         std::sort(aircraftList.begin(), aircraftList.end());
         std::reverse(aircraftList.begin(), aircraftList.end());
         for (int i = 0; i < aircraftList.size() - 1; i++) {
-            AmanAircraft* curr = &aircraftList[i];
-            AmanAircraft* next = &aircraftList[i + 1];
+            auto curr = &aircraftList[i];
+            auto next = &aircraftList[i + 1];
 
             curr->secondsBehindPreceeding = curr->eta - next->eta;
         }
@@ -147,13 +148,13 @@ bool AmanPlugIn::OnCompileCommand(const char* sCommandLine) {
             amanController->openWindow();
             cmdHandled = true;
         } else if (command == "clear") {
-            gTimelines.clear();
+            timelines.clear();
             timelinesChanged = true;
             cmdHandled = true;
         } else if (command == "add" && args.size() > 2) {
             std::string finalFixes = args.at(2);
             std::string vias = args.size() > 3 ? args.at(3) : "";
-            this->addTimeline(finalFixes, vias);
+            addTimeline(finalFixes, vias);
             timelinesChanged = true;
             cmdHandled = true;
         } else if (command == "del") {
@@ -163,7 +164,7 @@ bool AmanPlugIn::OnCompileCommand(const char* sCommandLine) {
             } catch (std::exception& e) {
                 id = 0;
             }
-            timelinesChanged = cmdHandled = this->removeTimeline(id - 1);
+            timelinesChanged = cmdHandled = removeTimeline(id - 1);
         }
     }
     if (timelinesChanged) {
@@ -176,7 +177,7 @@ bool AmanPlugIn::OnCompileCommand(const char* sCommandLine) {
 
 void AmanPlugIn::saveToSettings() {
     std::stringstream ss;
-    for (AmanTimeline* timeline : gTimelines) {
+    for (auto& timeline : timelines) {
         auto id = timeline->getIdentifier();
         auto viaFixes = timeline->getViaFixes();
 
@@ -189,7 +190,7 @@ void AmanPlugIn::saveToSettings() {
     }
     std::string toSave = ss.str();
     REMOVE_LAST_CHAR(toSave);
-    pMyPlugIn->SaveDataToSettings("AMAN", "", toSave.c_str());
+    SaveDataToSettings("AMAN", "", toSave.c_str());
 }
 
 void AmanPlugIn::loadTimelines(const std::string& filename) {
@@ -229,7 +230,7 @@ void AmanPlugIn::loadTimelines(const std::string& filename) {
             }
         }
 
-        gTimelines.push_back(new AmanTimeline(finalFixes, viaFixes, alias));
+        timelines.push_back(std::make_shared<AmanTimeline>(finalFixes, viaFixes, alias));
     }
 }
 
@@ -243,12 +244,12 @@ void AmanPlugIn::addTimeline(std::string finalFixes, std::string viaFixes) {
     REMOVE_EMPTY(ids, nonEmptyFinalFixes);
     REMOVE_EMPTY(vias, nonEmptyViaFixes);
 
-    gTimelines.push_back(new AmanTimeline(nonEmptyFinalFixes, nonEmptyViaFixes, ""));
+    timelines.push_back(std::make_shared<AmanTimeline>(nonEmptyFinalFixes, nonEmptyViaFixes, ""));
 }
 
 bool AmanPlugIn::removeTimeline(int id) {
-    if (id >= 0 && id < gTimelines.size()) {
-        gTimelines.erase(gTimelines.begin() + id);
+    if (id >= 0 && id < timelines.size()) {
+        timelines.erase(timelines.begin() + id);
         return true;
     }
     return false;
@@ -287,11 +288,11 @@ double AmanPlugIn::findRemainingDist(CRadarTarget radarTarget, CFlightPlanExtrac
     return totalDistance;
 }
 
-std::shared_ptr<std::vector<AmanTimeline*>> AmanPlugIn::getTimelines(std::vector<std::string>& ids) {
-    auto result = std::make_shared<std::vector<AmanTimeline*>>();
+std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> AmanPlugIn::getTimelines(std::vector<std::string>& ids) {
+    auto result = std::make_shared<std::vector<std::shared_ptr<AmanTimeline>>>();
 
-    for (auto id : ids) {
-        for each (auto timeline in gTimelines) {
+    for (auto& id : ids) {
+        for each (auto& timeline in timelines) {
             if (timeline->getIdentifier() == id) {
                 auto pAircraftList = timeline->getAircraftList();
                 auto fixes = timeline->getFixes();
@@ -320,18 +321,4 @@ std::vector<std::string> AmanPlugIn::splitString(const std::string& string, cons
         output.push_back(string.substr(start, end - start));
     }
     return output;
-}
-
-void __declspec(dllexport) EuroScopePlugInInit(EuroScopePlugIn::CPlugIn** ppPlugInInstance) {
-    // allocate
-    *ppPlugInInstance = pMyPlugIn = new AmanPlugIn;
-
-    amanController = new AmanController(pMyPlugIn);
-    amanController->openWindow();
-    amanController->dataUpdated();
-}
-
-void __declspec(dllexport) EuroScopePlugInExit(void) {
-    delete amanController;
-    delete pMyPlugIn;
 }

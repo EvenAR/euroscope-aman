@@ -1,14 +1,15 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <memory>
 
 class AmanAircraft;
 class AmanTimeline;
 
 class AmanTimelineView {
 public:
-    static CRect render(AmanTimeline* timeline, CRect clientRect, HDC memdc, int xOffset);
-    static CRect getArea(AmanTimeline* timeline, CRect clientRect, int i);
+    static CRect render(std::shared_ptr<AmanTimeline> timeline, CRect clientRect, HDC memdc, int xOffset);
+    static CRect getArea(std::shared_ptr<AmanTimeline> timeline, CRect clientRect, int i);
 
 private:
     struct TextSegment {
@@ -21,4 +22,3 @@ private:
     static void drawAircraftChain(HDC hdc, int timeNow, int xStart, int yStart, float pixelsPerSec, bool left, std::vector<AmanAircraft> aircraftList);
     static void drawMultiColorText(HDC hdc, CPoint pt, std::vector<TextSegment> texts, bool vertical = false);
 };
-

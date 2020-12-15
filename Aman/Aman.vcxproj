@@ -192,6 +192,7 @@
     <ClCompile Include="AmanTimeline.cpp" />
     <ClCompile Include="AmanTimelineView.cpp" />
     <ClCompile Include="AmanWindow.cpp" />
+    <ClCompile Include="Main.cpp" />
     <ClCompile Include="MenuBar.cpp" />
     <ClCompile Include="PopupMenu.cpp" />
     <ClCompile Include="TitleBar.cpp" />

@@ -17,25 +17,23 @@ class MenuBar;
 class AmanWindow : public Window {
 
 public:
-    AmanWindow(AmanController* controller, TitleBar* titleBar, std::set<std::string> ids);
+    AmanWindow(AmanController* controller, std::shared_ptr<TitleBar> titleBar, std::set<std::string> ids);
     ~AmanWindow();
 
-    void update(std::shared_ptr<std::vector<AmanTimeline*>> timelines);
+    void update(std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> timelines);
     void collapse();
     void expand();
     bool isExpanded();
 
-    AmanTimeline* getTimelineAt(std::shared_ptr<std::vector<AmanTimeline*>> timelines, CPoint cursorPosition);
+    std::shared_ptr<AmanTimeline> getTimelineAt(std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> all, CPoint cursorPosition);
 
 private:
-
-
     AmanController* controller;
-    TitleBar* titleBar;
-    MenuBar* menuBar;
+    std::shared_ptr<TitleBar> titleBar;
+    std::shared_ptr<MenuBar> menuBar;
     std::shared_ptr<PopupMenu> profilesMenu;
 
-    std::shared_ptr<std::vector<AmanTimeline*>> timelinesToRender;
+    std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> timelinesToRender;
     std::mutex renderTimelinesMutex;
 
     int originalHeight;

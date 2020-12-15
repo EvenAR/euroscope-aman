@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 
 class TitleBar;
 class AmanWindow;
@@ -10,7 +11,7 @@ class AmanTimeline;
 
 class AmanController {
 public:
-    AmanController(AmanPlugIn* plugin);
+    AmanController(AmanPlugIn* model);
     void openWindow();
     void windowClosed();
     void mousePressed(CPoint cursorPosition);
@@ -28,8 +29,9 @@ private:
     CPoint mouseDownPosition;
     CPoint previousMousePosition;
 
-    AmanPlugIn* amanPlugin; // Model
-    AmanWindow* amanWindow; // View1
-    TitleBar* titleBar;
+    AmanPlugIn* amanModel;
+    std::shared_ptr<AmanWindow> amanWindow;
+    std::shared_ptr<TitleBar> titleBar;
+
     std::vector<std::string> activeTimelines;
 };

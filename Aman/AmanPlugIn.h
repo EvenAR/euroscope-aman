@@ -9,15 +9,18 @@ using namespace EuroScopePlugIn;
 
 class AmanAircraft;
 class AmanTimeline;
+class AmanController;
 
 class AmanPlugIn : public CPlugIn {
 public:
     AmanPlugIn();
     std::set<std::string> getAvailableIds();
-    std::shared_ptr<std::vector<AmanTimeline*>> getTimelines(std::vector<std::string>& ids);
+    std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> getTimelines(std::vector<std::string>& ids);
     virtual ~AmanPlugIn();
 
 private:
+    std::shared_ptr<AmanController> amanController;
+    std::vector<std::shared_ptr<AmanTimeline>> timelines;
     std::string pluginDirectory;
 
     // EuroScope events:

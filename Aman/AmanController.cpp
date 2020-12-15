@@ -11,10 +11,10 @@
 #define FIVE_MINUTES 300
 
 AmanController::AmanController(AmanPlugIn* plugin) {
-    this->amanPlugin = plugin;
+    this->amanModel = plugin;
     this->amanWindow = NULL;
 
-    this->titleBar = new TitleBar();
+    this->titleBar = std::make_shared<TitleBar>();
 
     this->titleBar->on("COLLAPSE_CLICKED", [&]() {
         if (this->amanWindow->isExpanded()) {
@@ -30,18 +30,20 @@ AmanController::AmanController(AmanPlugIn* plugin) {
         if (this->amanWindow->isExpanded()) {
             this->doResize = true;
         }
-        });
+    });
 }
 
+AmanController::~AmanController() {}
+
 void AmanController::openWindow() {
-    if (this->amanWindow == NULL) {
-        this->amanWindow = new AmanWindow(this, titleBar, amanPlugin->getAvailableIds());
+    if (this->amanWindow == nullptr) {
+        this->amanWindow = std::make_shared<AmanWindow>(this, titleBar, amanModel->getAvailableIds());
     }
 }
 
 void AmanController::dataUpdated() {
-    if (this->amanWindow != NULL) {
-        auto timelines = this->amanPlugin->getTimelines(activeTimelines);
+    if (this->amanWindow != nullptr) {
+        auto timelines = this->amanModel->getTimelines(activeTimelines);
         this->amanWindow->update(timelines);
     }
 }
@@ -80,7 +82,7 @@ void AmanController::mouseMoved(CPoint cursorPosition) {
 }
 
 void AmanController::mouseWheelSrolled(CPoint cursorPosition, short delta) {
-    auto allTimelines = this->amanPlugin->getTimelines(activeTimelines);
+    auto allTimelines = this->amanModel->getTimelines(activeTimelines);
     auto timelinePointedAt = this->amanWindow->getTimelineAt(allTimelines, cursorPosition);
     if (timelinePointedAt) {
         auto currentRange = timelinePointedAt->getRange();
@@ -95,10 +97,3 @@ void AmanController::mouseWheelSrolled(CPoint cursorPosition, short delta) {
 }
 
 void AmanController::windowClosed() { this->amanWindow = NULL; }
-
-AmanController::~AmanController() {
-    if (this->amanWindow != NULL) {
-        delete this->amanWindow;
-        this->amanWindow = NULL;
-    }
-}

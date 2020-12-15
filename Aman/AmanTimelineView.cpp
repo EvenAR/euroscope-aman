@@ -10,7 +10,7 @@
 #include "AmanTimelineView.h"
 #include "Constants.h"
 
-CRect AmanTimelineView::getArea(AmanTimeline* timeline, CRect clientRect, int xOffset) {
+CRect AmanTimelineView::getArea(std::shared_ptr<AmanTimeline> timeline, CRect clientRect, int xOffset) {
     int totalWidth;
 
     if (timeline->isDual()) {
@@ -22,7 +22,7 @@ CRect AmanTimelineView::getArea(AmanTimeline* timeline, CRect clientRect, int xO
     return CRect(xOffset, clientRect.top, xOffset + totalWidth, clientRect.bottom);
 }
 
-CRect AmanTimelineView::render(AmanTimeline* timeline, CRect clientRect, HDC hdc, int xOffset) {
+CRect AmanTimelineView::render(std::shared_ptr<AmanTimeline> timeline, CRect clientRect, HDC hdc, int xOffset) {
     CRect myTotalArea = getArea(timeline, clientRect, xOffset);
 
     long int unixTimestamp = static_cast<long int>(std::time(nullptr)); // Current UNIX-unixTimestamp in seconds
