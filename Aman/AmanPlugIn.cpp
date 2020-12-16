@@ -39,8 +39,8 @@ AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE, "Arrival Manager", "1.4.0
     loadTimelines("aman_profiles.json");
 
     amanController = std::make_shared<AmanController>(this);
-    amanController->openWindow();
-    amanController->dataUpdated();
+    amanController->modelLoaded();
+    amanController->modelUpdated();
 }
 
 AmanPlugIn::~AmanPlugIn() { 
@@ -132,7 +132,7 @@ std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixNa
 
 void AmanPlugIn::OnTimer(int Counter) {
     // Runs every second
-    amanController->dataUpdated();
+    amanController->modelUpdated();
 }
 
 bool AmanPlugIn::OnCompileCommand(const char* sCommandLine) {
@@ -145,7 +145,7 @@ bool AmanPlugIn::OnCompileCommand(const char* sCommandLine) {
         std::string command = args.at(1);
 
         if (command == "show") {
-            amanController->openWindow();
+            amanController->modelLoaded();
             cmdHandled = true;
         } else if (command == "clear") {
             timelines.clear();
@@ -168,7 +168,7 @@ bool AmanPlugIn::OnCompileCommand(const char* sCommandLine) {
         }
     }
     if (timelinesChanged) {
-        amanController->dataUpdated();
+        amanController->modelUpdated();
         saveToSettings();
     }
 

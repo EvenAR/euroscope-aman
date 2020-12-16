@@ -9,24 +9,42 @@
 
 #include <algorithm> 
 
-AmanWindow::AmanWindow(AmanController* controller, std::shared_ptr<TitleBar> titleBar, std::set<std::string> ids) : Window("AmanWindow", "AMAN") {
-    this->controller = controller;
-    this->titleBar = titleBar;
-    this->menuBar = std::make_shared<MenuBar>();
+#define THREE_HOURS 10800
+#define FIVE_MINUTES 300
 
-    std::vector<std::string> options(ids.begin(), ids.end());
+AmanWindow::AmanWindow(AmanController* controller, std::set<std::string> availProfiles) : Window("AmanWindow", "AMAN") {
+    this->controller = controller;
+    this->titleBar = std::make_shared<TitleBar>();
+    this->menuBar = std::make_shared<MenuBar>();
 
     static auto onSelection = [controller](const std::string& timelineId) {
         controller->toggleTimeline(timelineId);
     };
 
-    this->profilesMenu = std::make_shared<PopupMenu>("Load", options, onSelection);
+    std::vector<std::string> profileOptions(availProfiles.begin(), availProfiles.end());
+    this->profilesMenu = std::make_shared<PopupMenu>("Load", profileOptions, onSelection);
     this->menuBar->addPopupMenu(profilesMenu);
+
+    this->titleBar->on("COLLAPSE_CLICKED", [&]() {
+        if (this->isExpanded()) {
+            this->collapse();
+        } else {
+            this->expand();
+        }
+    });
+
+    this->titleBar->on("MOUSE_PRESSED", [&]() { this->moveWindow = true; });
+
+    this->titleBar->on("RESIZE_PRESSED", [&]() {
+        if (this->isExpanded()) {
+            this->doResize = true;
+        }
+    });
 }
 
 AmanWindow::~AmanWindow() {}
 
-void AmanWindow::update(std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> timelines) {
+void AmanWindow::update(timelineCollection timelines) {
     renderTimelinesMutex.lock(); // Wait for current render to complete
     timelinesToRender = timelines;
     renderTimelinesMutex.unlock();
@@ -37,16 +55,17 @@ void AmanWindow::update(std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline
 void AmanWindow::drawContent(HDC hdc, CRect clientRect) {
     FillRect(hdc, &clientRect, AMAN_BRUSH_MAIN_BACKGROUND);
 
-    CRect lastTimelineArea;
+    CRect previousTimelineArea;
     std::vector<std::string> timelineIds;
+
+    timelineView = clientRect;
+    timelineView.top += 35;
 
     // This code runs on the window's thread, so we must make sure
     // the main thread is not currently writing to the shared AmanTimeline-vector
     renderTimelinesMutex.lock();
-    timelineView = clientRect;
-    timelineView.top += 35;
     for (auto& timeline : *timelinesToRender) {
-        lastTimelineArea = AmanTimelineView::render(timeline, timelineView, hdc, lastTimelineArea.right);
+        previousTimelineArea = AmanTimelineView::render(timeline, timelineView, hdc, previousTimelineArea.right);
         timelineIds.push_back(timeline->getIdentifier());
     }
     renderTimelinesMutex.unlock();
@@ -59,7 +78,7 @@ void AmanWindow::drawContent(HDC hdc, CRect clientRect) {
     this->menuBar->render(hdc, titleBarRect);
 }
 
-std::shared_ptr<AmanTimeline> AmanWindow::getTimelineAt(std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> timelines, CPoint cursorPosition) {
+std::shared_ptr<AmanTimeline> AmanWindow::getTimelineAt(timelineCollection timelines, CPoint cursorPosition) {
     int nextOffsetX = 0;
     for (auto& timeline : *timelines) {
         CRect area = AmanTimelineView::getArea(timeline, timelineView, nextOffsetX);
@@ -93,31 +112,52 @@ bool AmanWindow::isExpanded() {
 }
 
 void AmanWindow::mousePressed(CPoint cursorPosClient) {
-    controller->mousePressed(cursorPosClient);
     if (menuBar->onMouseClick(cursorPosClient)) {
         requestRepaint();
     }
+    titleBar->mousePressed(cursorPosClient);
+    this->mouseDownPosition = cursorPosClient;
 }
 
 void AmanWindow::mouseReleased(CPoint cursorPosClient) {
-    controller->mouseReleased(cursorPosClient);
+    this->moveWindow = false;
+    this->doResize = false;
 }
 
 void AmanWindow::mouseMoved(CPoint cursorPosClient) {
+    ClientToScreen(hwnd, &cursorPosClient);
+
+    CPoint diff = cursorPosClient - prevMousePosition;
+
+    if (this->doResize) {
+        this->resizeWindowBy(diff);
+    } else if (this->moveWindow) {
+        this->moveWindowBy(diff);
+    }
+
     if (menuBar->onMouseMove(cursorPosClient)) {
         requestRepaint();
     }
-    ClientToScreen(hwnd, &cursorPosClient);
-    controller->mouseMoved(cursorPosClient);
+
+    prevMousePosition = cursorPosClient;
 }
 
 void AmanWindow::mouseWheelSrolled(CPoint cursorPosClient, short delta) {
-    controller->mouseWheelSrolled(cursorPosClient, delta);
+    auto timelinePointedAt = getTimelineAt(timelinesToRender, cursorPosClient);
+    if (timelinePointedAt) {
+        auto currentRange = timelinePointedAt->getRange();
+        auto newRange = currentRange - delta;
+        auto limitReached = newRange < FIVE_MINUTES || newRange > THREE_HOURS;
+
+        if (!limitReached) {
+            timelinePointedAt->setRange(newRange);
+            requestRepaint();
+        }
+    }
     if (menuBar->onMouseScroll(delta)) {
         requestRepaint();
     }
 }
 
 void AmanWindow::windowClosed() {
-    controller->windowClosed();
 }

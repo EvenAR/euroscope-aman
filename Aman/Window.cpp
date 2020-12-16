@@ -10,17 +10,13 @@ Window::Window(const std::string& className, const std::string& windowName) {
     show(SW_SHOWNORMAL);
 
     // Thread responsible for updating the window
-    exit = false;
     CreateThread(0, NULL, lookForMessages, this, NULL, &threadId);
 }
 
 Window::~Window() {
-    exit = true;
-    //PostQuitMessage(0);
     SendMessage(hwnd, WM_CLOSE, 0, 0);
     WaitForSingleObject(&threadId, INFINITE);
     int i  = 32;
-    //TerminateThread(&threadId, 0);
 }
 
 // Window thread procedure
@@ -38,7 +34,7 @@ bool Window::processNextMessage() {
     if (::GetMessage(&msg, hwnd, 0, 0)) {
         ::TranslateMessage(&msg);
         ::DispatchMessage(&msg);
-    } else if(exit) {
+    } else {
         return false;
     }
 

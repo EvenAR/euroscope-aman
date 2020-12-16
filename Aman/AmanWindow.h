@@ -14,18 +14,15 @@ class TitleBar;
 class PopupMenu;
 class MenuBar;
 
+typedef std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> timelineCollection;
+
 class AmanWindow : public Window {
 
 public:
-    AmanWindow(AmanController* controller, std::shared_ptr<TitleBar> titleBar, std::set<std::string> ids);
+    AmanWindow(AmanController* controller, std::set<std::string> availProfiles);
     ~AmanWindow();
 
-    void update(std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> timelines);
-    void collapse();
-    void expand();
-    bool isExpanded();
-
-    std::shared_ptr<AmanTimeline> getTimelineAt(std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> all, CPoint cursorPosition);
+    void update(timelineCollection timelines);
 
 private:
     AmanController* controller;
@@ -33,11 +30,22 @@ private:
     std::shared_ptr<MenuBar> menuBar;
     std::shared_ptr<PopupMenu> profilesMenu;
 
-    std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> timelinesToRender;
+    timelineCollection timelinesToRender;
     std::mutex renderTimelinesMutex;
 
     int originalHeight;
     CRect timelineView;
+
+    CRect originalSize;
+    CPoint mouseDownPosition;
+    CPoint prevMousePosition;
+    bool moveWindow = false;
+    bool doResize = false;
+
+    void collapse();
+    void expand();
+    bool isExpanded();
+    std::shared_ptr<AmanTimeline> getTimelineAt(timelineCollection all, CPoint cursorPosition);
 
     void mousePressed(CPoint cursorPosClient) override;
     void mouseReleased(CPoint cursorPosClient) override;
