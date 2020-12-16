@@ -44,7 +44,6 @@ AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE, "Arrival Manager", "1.4.0
 }
 
 AmanPlugIn::~AmanPlugIn() { 
-    int i = 0;
 }
 
 std::set<std::string> AmanPlugIn::getAvailableIds() {
@@ -105,14 +104,20 @@ std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixNa
             }
 
             if (timeToFix > 0) {
-                aircraftList.push_back(
-                    { rt.GetCallsign(), fixName, rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetArrivalRwy(),
-                     rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetAircraftFPType(),
-                     rt.GetCorrelatedFlightPlan().GetControllerAssignedData().GetDirectToPointName(),
-                     getFirstViaFixIndex(route, viaFixes), rt.GetCorrelatedFlightPlan().GetTrackingControllerIsMe(),
-                     isSelectedAircraft, rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetAircraftWtc(),
-                     timeNow + timeToFix - rt.GetPosition().GetReceivedTime(),
-                     findRemainingDist(rt, route, targetFixIndex), 0 });
+                AmanAircraft ac;
+                ac.callsign = rt.GetCallsign();
+                ac.finalFix = fixName;
+                ac.arrivalRunway = rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetArrivalRwy();
+                ac.icaoType = rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetAircraftFPType();
+                ac.nextFix = rt.GetCorrelatedFlightPlan().GetControllerAssignedData().GetDirectToPointName();
+                ac.viaFixIndex = getFirstViaFixIndex(route, viaFixes);
+                ac.trackedByMe = rt.GetCorrelatedFlightPlan().GetTrackingControllerIsMe();
+                ac.isSelected = isSelectedAircraft;
+                ac.wtc = rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetAircraftWtc();
+                ac.eta = timeNow + timeToFix - rt.GetPosition().GetReceivedTime();
+                ac.distLeft = findRemainingDist(rt, route, targetFixIndex);
+                ac.secondsBehindPreceeding = 0; // Updated in the for-loop below
+                aircraftList.push_back(ac);
             }
         }
     }
