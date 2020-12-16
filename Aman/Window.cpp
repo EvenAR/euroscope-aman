@@ -6,17 +6,20 @@ Window::Window(const std::string& className, const std::string& windowName) {
     this->className = className;
     this->windowName = windowName;
 
-    create();
-    show(SW_SHOWNORMAL);
+    if (create()) {
+        show(SW_SHOWNORMAL);
 
-    // Thread responsible for updating the window
-    CreateThread(0, NULL, lookForMessages, this, NULL, &threadId);
+        // Thread responsible for updating the window
+        CreateThread(0, NULL, lookForMessages, this, NULL, &threadId);
+    }
+
 }
 
 Window::~Window() {
-    SendMessage(hwnd, WM_CLOSE, 0, 0);
+    DestroyWindow(hwnd);
+    HINSTANCE hInstance = (HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE);
+    UnregisterClass(className.c_str(), hInstance);
     WaitForSingleObject(&threadId, INFINITE);
-    int i  = 32;
 }
 
 // Window thread procedure
@@ -67,7 +70,7 @@ bool Window::create() {
         return false;
     }
 
-    HWND hwnd = CreateWindowEx(
+    HWND tmpHwnd = CreateWindowEx(
         WS_EX_TOPMOST,
         className.c_str(),
         windowName.c_str(),
@@ -82,7 +85,7 @@ bool Window::create() {
         this
     );
 
-    SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
+    SetWindowLong(tmpHwnd, GWL_STYLE, GetWindowLong(tmpHwnd, GWL_STYLE) | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
 
     return true;
 }
@@ -121,8 +124,8 @@ LRESULT CALLBACK Window::handleMessage(UINT message, WPARAM wParam, LPARAM lPara
 
     switch (message) {
     case WM_CLOSE: {
-        DestroyWindow(hwnd);
-        UnregisterClass(className.c_str(), hInstance);
+        // Should not close 
+        return 0;
     } break;
     case WM_DESTROY: {
         windowClosed();
@@ -148,7 +151,7 @@ LRESULT CALLBACK Window::handleMessage(UINT message, WPARAM wParam, LPARAM lPara
         mouseReleased(cursorPosClient);
     } break;
     case WM_MOUSEMOVE: {
-        mouseMoved(cursorPosClient);
+        mouseMoved(cursorPosClient, cursorPosScreen);
     } break;
     case WM_MOUSEWHEEL: {
         short delta = GET_WHEEL_DELTA_WPARAM(wParam);

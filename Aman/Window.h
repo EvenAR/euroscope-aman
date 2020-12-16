@@ -17,7 +17,7 @@ protected:
     // Should be overridden by child class:
     virtual void mousePressed(CPoint cursorPosClient) {};
     virtual void mouseReleased(CPoint cursorPosClient) {};
-    virtual void mouseMoved(CPoint cursorPosClient) {};
+    virtual void mouseMoved(CPoint cursorPosClient, CPoint cursorPosScreen) {};
     virtual void mouseWheelSrolled(CPoint cursorPosClient, short delta) {};
     virtual void windowClosed() {};
     virtual void drawContent(HDC hdc, CRect clientRect) {};
@@ -36,6 +36,5 @@ private:
     void show(int nCmdShow);
     bool processNextMessage();
     void render(HWND hwnd);
-    bool exit;
 };
 

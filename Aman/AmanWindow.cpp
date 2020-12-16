@@ -124,22 +124,18 @@ void AmanWindow::mouseReleased(CPoint cursorPosClient) {
     this->doResize = false;
 }
 
-void AmanWindow::mouseMoved(CPoint cursorPosClient) {
-    ClientToScreen(hwnd, &cursorPosClient);
+void AmanWindow::mouseMoved(CPoint cursorPosClient, CPoint cursorPosScreen) {
+    if (menuBar->onMouseMove(cursorPosClient)) {
+        requestRepaint();
+    }
 
-    CPoint diff = cursorPosClient - prevMousePosition;
-
+    CPoint diff = cursorPosScreen - prevMousePosition;
     if (this->doResize) {
         this->resizeWindowBy(diff);
     } else if (this->moveWindow) {
         this->moveWindowBy(diff);
     }
-
-    if (menuBar->onMouseMove(cursorPosClient)) {
-        requestRepaint();
-    }
-
-    prevMousePosition = cursorPosClient;
+    prevMousePosition = cursorPosScreen;
 }
 
 void AmanWindow::mouseWheelSrolled(CPoint cursorPosClient, short delta) {

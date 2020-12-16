@@ -49,7 +49,7 @@ private:
 
     void mousePressed(CPoint cursorPosClient) override;
     void mouseReleased(CPoint cursorPosClient) override;
-    void mouseMoved(CPoint cursorPosClient) override;
+    void mouseMoved(CPoint cursorPosClient, CPoint cursorPosScreen) override;
     void mouseWheelSrolled(CPoint cursorPosClient, short delta) override;
     void windowClosed() override;
     void drawContent(HDC hdc, CRect clientRect) override;
