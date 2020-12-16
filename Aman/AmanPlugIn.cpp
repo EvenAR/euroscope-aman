@@ -36,7 +36,7 @@ AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE, "Arrival Manager", "1.4.0
     std::string fullPluginPathStr(fullPluginPath);
     pluginDirectory = fullPluginPathStr.substr(0, fullPluginPathStr.find_last_of("\\"));
 
-    loadTimelines("aman_profiles.json");
+    loadTimelines("aman-config.json");
 
     amanController = std::make_shared<AmanController>(this);
     amanController->modelLoaded();

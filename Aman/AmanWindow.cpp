@@ -22,7 +22,7 @@ AmanWindow::AmanWindow(AmanController* controller, std::set<std::string> availPr
     };
 
     std::vector<std::string> profileOptions(availProfiles.begin(), availProfiles.end());
-    this->profilesMenu = std::make_shared<PopupMenu>("Load", profileOptions, onSelection);
+    this->profilesMenu = std::make_shared<PopupMenu>("Profiles", profileOptions, onSelection);
     this->menuBar->addPopupMenu(profilesMenu);
 
     this->titleBar->on("COLLAPSE_CLICKED", [&]() {
