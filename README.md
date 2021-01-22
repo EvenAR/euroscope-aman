@@ -30,6 +30,9 @@ Example `aman-config.json`:
 | `alias`       | (optional) If used, this will be the ID of the timeline. If not, the name will be generated from `targetFixes`.
 
 The information displayed for each aircraft has the following layout:
+
+![](https://i.gyazo.com/76f58bf5317288c11fdf2580356c913b.png)
+
 ```
 <assigned runway>
 <call sign>
@@ -44,3 +47,5 @@ The information displayed for each aircraft has the following layout:
 ## Download
 
 The plugin .dll-file can be found in the Release folder. [Direct link](https://github.com/EvenAR/euroscope-aman/raw/master/Release/Aman.dll).
+
+![Window](https://i.gyazo.com/52cf2fbc1d6eb48f4a77b71784e7c61f.png)
