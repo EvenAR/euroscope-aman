@@ -1,9 +1,9 @@
 {
     "timelines": [
         {
-            "alias": "01L/01R",
-            "targetFixes": [ "OBW40", "ONE40" ],
-            "viaFixes": [ "RIPAM", "LUNIP", "ESEBA", "INREX", "BELGU", "ADOPI", "RIPAM" ]
+            "alias": "19R/19L",
+            "targetFixes": [ "GSW40", "GME40" ],
+            "viaFixes": [ "ADOPI", "LUNIP", "ESEBA", "INREX", "BELGU", "RIPAM" ]
         }
     ]
 }
