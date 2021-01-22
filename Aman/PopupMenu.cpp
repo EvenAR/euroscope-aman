@@ -86,3 +86,7 @@ CRect PopupMenu::renderMenuItem(HDC hdc, const std::string& text, CRect area, in
 void PopupMenu::setActiveItems(const std::vector<std::string>& activeItems) {
     this->activeItems = activeItems;
 }
+
+void PopupMenu::setMenuItems(std::vector<std::string> items) {
+    this->items = items;
+}

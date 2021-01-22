@@ -17,6 +17,7 @@ public:
     bool onMouseClick(CPoint pt);
     bool onMouseHover(CPoint pt);
     const std::string& getName() { return name; };
+    void setMenuItems(std::vector<std::string> items);
     void setActiveItems(const std::vector<std::string>& activeItems);
 private:
     std::string name;

@@ -13,6 +13,7 @@ public:
     void modelLoaded();
     void modelUpdated();
     void toggleTimeline(const std::string& id);
+    void reloadProfiles();
 
     ~AmanController();
 

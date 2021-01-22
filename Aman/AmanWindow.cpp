@@ -12,18 +12,23 @@
 #define THREE_HOURS 10800
 #define FIVE_MINUTES 300
 
-AmanWindow::AmanWindow(AmanController* controller, std::set<std::string> availProfiles) : Window("AmanWindow", "AMAN") {
+#define TIMELINES_RELOAD "[Reload aman-config.json] "
+
+AmanWindow::AmanWindow(AmanController* controller) : Window("AmanWindow", "AMAN") {
     this->controller = controller;
     this->titleBar = std::make_shared<TitleBar>();
     this->menuBar = std::make_shared<MenuBar>();
 
     static auto onSelection = [controller](const std::string& timelineId) {
-        controller->toggleTimeline(timelineId);
+        if (timelineId == TIMELINES_RELOAD) {
+            controller->reloadProfiles();
+        } else {
+            controller->toggleTimeline(timelineId);
+        }
     };
-
-    std::vector<std::string> profileOptions(availProfiles.begin(), availProfiles.end());
-    this->profilesMenu = std::make_shared<PopupMenu>("Profiles", profileOptions, onSelection);
-    this->menuBar->addPopupMenu(profilesMenu);
+    
+    this->popupMenu = std::make_shared<PopupMenu>("Menu", std::vector<std::string>(), onSelection);
+    this->menuBar->addPopupMenu(popupMenu);
 
     this->titleBar->on("COLLAPSE_CLICKED", [&]() {
         if (this->isExpanded()) {
@@ -40,6 +45,12 @@ AmanWindow::AmanWindow(AmanController* controller, std::set<std::string> availPr
             this->doResize = true;
         }
     });
+}
+
+void AmanWindow::setAvailableTimelines(std::set<std::string> availProfiles) {
+    std::vector<std::string> profileOptions(availProfiles.begin(), availProfiles.end());
+    profileOptions.push_back(TIMELINES_RELOAD);
+    this->popupMenu->setMenuItems(profileOptions);
 }
 
 AmanWindow::~AmanWindow() {}
@@ -74,7 +85,7 @@ void AmanWindow::drawContent(HDC hdc, CRect clientRect) {
     titleBarRect.MoveToY(titleBarRect.bottom);
     titleBarRect.bottom = titleBarRect.top + 15;
 
-    profilesMenu->setActiveItems(timelineIds);
+    popupMenu->setActiveItems(timelineIds);
     this->menuBar->render(hdc, titleBarRect);
 }
 

@@ -18,9 +18,6 @@
 #include <vector>
 #include <fstream>
 
-#define SETTINGS_TIMELINE_DELIMITER '|'
-#define SETTINGS_PARAM_DELIMITER ';'
-
 #define TO_UPPERCASE(str) std::transform(str.begin(), str.end(), str.begin(), ::toupper);
 #define REMOVE_EMPTY(strVec, output)                                                                                   \
     std::copy_if(strVec.begin(), strVec.end(), std::back_inserter(output), [](std::string i) { return !i.empty(); });
@@ -29,7 +26,7 @@
         str.pop_back();
 #define DISPLAY_WARNING(str) DisplayUserMessage("Aman", "Warning", str, true, true, true, true, false);
 
-AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE, "Arrival Manager", "1.4.0", "Even Rognlien", "Open source") {
+AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE, "Arrival Manager", "1.5.0", "Even Rognlien", "Open source") {
     // Find directory of this .dll
     char fullPluginPath[_MAX_PATH];
     GetModuleFileNameA((HINSTANCE)&__ImageBase, fullPluginPath, sizeof(fullPluginPath));
@@ -140,64 +137,6 @@ void AmanPlugIn::OnTimer(int Counter) {
     amanController->modelUpdated();
 }
 
-bool AmanPlugIn::OnCompileCommand(const char* sCommandLine) {
-    bool cmdHandled = false;
-    bool timelinesChanged = false;
-
-    auto args = AmanPlugIn::splitString(sCommandLine, ' ');
-
-    if (args.size() > 1 && args.at(0) == ".aman") {
-        std::string command = args.at(1);
-
-        if (command == "show") {
-            amanController->modelLoaded();
-            cmdHandled = true;
-        } else if (command == "clear") {
-            timelines.clear();
-            timelinesChanged = true;
-            cmdHandled = true;
-        } else if (command == "add" && args.size() > 2) {
-            std::string finalFixes = args.at(2);
-            std::string vias = args.size() > 3 ? args.at(3) : "";
-            addTimeline(finalFixes, vias);
-            timelinesChanged = true;
-            cmdHandled = true;
-        } else if (command == "del") {
-            int id;
-            try {
-                id = stoi(args.at(2));
-            } catch (std::exception& e) {
-                id = 0;
-            }
-            timelinesChanged = cmdHandled = removeTimeline(id - 1);
-        }
-    }
-    if (timelinesChanged) {
-        amanController->modelUpdated();
-        saveToSettings();
-    }
-
-    return cmdHandled;
-}
-
-void AmanPlugIn::saveToSettings() {
-    std::stringstream ss;
-    for (auto& timeline : timelines) {
-        auto id = timeline->getIdentifier();
-        auto viaFixes = timeline->getViaFixes();
-
-        std::ostringstream viaFixesSs;
-        copy(viaFixes.begin(), viaFixes.end(), std::ostream_iterator<std::string>(viaFixesSs, ","));
-        std::string viaFixesOutput = viaFixesSs.str();
-        REMOVE_LAST_CHAR(viaFixesOutput);
-
-        ss << timeline->getIdentifier() << SETTINGS_PARAM_DELIMITER << viaFixesOutput << SETTINGS_TIMELINE_DELIMITER;
-    }
-    std::string toSave = ss.str();
-    REMOVE_LAST_CHAR(toSave);
-    SaveDataToSettings("AMAN", "", toSave.c_str());
-}
-
 void AmanPlugIn::loadTimelines(const std::string& filename) {
     std::ifstream file(pluginDirectory + "\\" + filename);
     std::string fileContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
@@ -214,50 +153,37 @@ void AmanPlugIn::loadTimelines(const std::string& filename) {
     if (document.HasParseError()) {
         ParseErrorCode code = document.GetParseError();
         size_t offset = document.GetErrorOffset();
-        std::string message = filename + ": error when parsing JSON at position " + std::to_string(offset) + ": '" + fileContent.substr(offset, 10) + "'";
+        std::string message = filename + ": error while parsing JSON at position " + std::to_string(offset) + ": '" + fileContent.substr(offset, 10) + "'";
         DISPLAY_WARNING(message.c_str());
         return;
     }
 
-    for (auto& v : document["profiles"].GetArray()) {
+    for (auto& v : document["timelines"].GetArray()) {
         auto object = v.GetObjectA();
-        std::string alias = object["alias"].GetString();
 
         std::vector<std::string> finalFixes;
-        for (auto& fix : object["fixes"].GetArray()) {
+        for (auto& fix : object["finalFixes"].GetArray()) {
             finalFixes.push_back(fix.GetString());
         }
 
         std::vector<std::string> viaFixes;
-        if (object.HasMember("vias") && object["vias"].IsArray()) {
-            for (auto& fix : object["vias"].GetArray()) {
+        if (object.HasMember("viaFixes") && object["viaFixes"].IsArray()) {
+            for (auto& fix : object["viaFixes"].GetArray()) {
                 viaFixes.push_back(fix.GetString());
             }
         }
 
+        std::string alias;
+        if (object.HasMember("alias") && object["alias"].IsString()) {
+            alias = object["alias"].GetString();
+        } else {
+            alias = "";
+            for (const auto& piece : finalFixes) alias += piece + "/";
+            alias = alias.substr(0, alias.size() - 1);
+        }
+
         timelines.push_back(std::make_shared<AmanTimeline>(finalFixes, viaFixes, alias));
     }
-}
-
-void AmanPlugIn::addTimeline(std::string finalFixes, std::string viaFixes) {
-    TO_UPPERCASE(finalFixes);
-    TO_UPPERCASE(viaFixes);
-    auto ids = AmanPlugIn::splitString(finalFixes, '/');
-    auto vias = AmanPlugIn::splitString(viaFixes, ',');
-
-    std::vector<std::string> nonEmptyFinalFixes, nonEmptyViaFixes;
-    REMOVE_EMPTY(ids, nonEmptyFinalFixes);
-    REMOVE_EMPTY(vias, nonEmptyViaFixes);
-
-    timelines.push_back(std::make_shared<AmanTimeline>(nonEmptyFinalFixes, nonEmptyViaFixes, ""));
-}
-
-bool AmanPlugIn::removeTimeline(int id) {
-    if (id >= 0 && id < timelines.size()) {
-        timelines.erase(timelines.begin() + id);
-        return true;
-    }
-    return false;
 }
 
 int AmanPlugIn::getFixIndexByName(CFlightPlanExtractedRoute extractedRoute, const std::string& fixName) {
@@ -315,6 +241,12 @@ std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> AmanPlugIn::getTimel
     }
 
     return result;
+}
+
+void AmanPlugIn::requestReload() {
+    timelines.clear();
+    loadTimelines("aman-config.json");
+    amanController->modelUpdated();
 }
 
 std::vector<std::string> AmanPlugIn::splitString(const std::string& string, const char delim) {

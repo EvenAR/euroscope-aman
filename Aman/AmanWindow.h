@@ -19,7 +19,8 @@ typedef std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> timelineColl
 class AmanWindow : public Window {
 
 public:
-    AmanWindow(AmanController* controller, std::set<std::string> availProfiles);
+    AmanWindow(AmanController* controller);
+    void setAvailableTimelines(std::set<std::string> availProfiles);
     ~AmanWindow();
 
     void update(timelineCollection timelines);
@@ -28,7 +29,7 @@ private:
     AmanController* controller;
     std::shared_ptr<TitleBar> titleBar;
     std::shared_ptr<MenuBar> menuBar;
-    std::shared_ptr<PopupMenu> profilesMenu;
+    std::shared_ptr<PopupMenu> popupMenu;
 
     timelineCollection timelinesToRender;
     std::mutex renderTimelinesMutex;

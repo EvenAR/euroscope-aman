@@ -21,4 +21,5 @@ private:
 
     static void drawAircraftChain(HDC hdc, int timeNow, int xStart, int yStart, float pixelsPerSec, bool left, std::vector<AmanAircraft> aircraftList);
     static void drawMultiColorText(HDC hdc, CPoint pt, std::vector<TextSegment> texts, bool vertical = false);
+    static void drawViafixColorLegend(HDC hdc, std::shared_ptr<AmanTimeline> timeline, CPoint position);
 };
