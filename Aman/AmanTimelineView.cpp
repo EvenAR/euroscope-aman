@@ -130,15 +130,7 @@ CRect AmanTimelineView::render(std::shared_ptr<AmanTimeline> timeline, CRect cli
     DrawText(hdc, text.c_str(), text.length(), &rect, DT_CENTER);
 
     // Draw color legend
-    if (!timeline->getViaFixes().empty()) {
-        SelectObject(hdc, AMAN_LEGEND_FONT);
-        std::vector<TextSegment> legendEntries({{ 6, false, AMAN_COLOR_FIX_TEXT, "Via:" }});
-        for (int i = 0; i < timeline->getViaFixes().size(); i++) {
-            legendEntries.push_back({ 6, false, VIA_FIX_COLORS[i], timeline->getViaFixes().at(i) });
-        }
-        CPoint legendPos = myTotalArea.TopLeft();
-        drawMultiColorText(hdc, legendPos, legendEntries, true);
-    }   
+    drawViafixColorLegend(hdc, timeline, myTotalArea.TopLeft());
 
     // Restore settings
     SetTextColor(hdc, oldColor);
@@ -160,20 +152,18 @@ void AmanTimelineView::drawAircraftChain(HDC hdc, int timeNow, int xStart, int y
     for (int ac = 0; ac < aircraftList.size(); ac++) {
         AmanAircraft aircraft = aircraftList.at(ac);
         int acPos = yStart - (aircraft.eta - timeNow) * pixelsPerSec;
-        CRect rect;
 
-        COLORREF oldTextColor;
         COLORREF defaultColor = aircraft.trackedByMe ? AMAN_COLOR_TRACKED : AMAN_COLOR_UNTRACKED;
         HBRUSH brush = aircraft.trackedByMe ? AMAN_TRACKED_BRUSH : AMAN_UNTRACKED_BRUSH;
         HPEN pen = aircraft.trackedByMe ? AMAN_WHITE_PEN : AMAN_GRAY_PEN;
 
-        SelectObject(hdc, pen);
-        SelectObject(hdc, brush);
-        oldTextColor = SetTextColor(hdc, defaultColor);
+        auto oldPen = SelectObject(hdc, pen);
+        auto oldBrush = SelectObject(hdc, brush);
+        auto oldTextColor = SetTextColor(hdc, defaultColor);
 
+        CRect boundingBox;
         bool hasKnownViaFix = aircraft.viaFixIndex > -1 && aircraft.viaFixIndex < N_VIA_FIX_COLORS;
-        COLORREF directRoutingColor = hasKnownViaFix ? VIA_FIX_COLORS[aircraft.viaFixIndex] : defaultColor;
-
+        
         // Left side of timeline
         if (left) {
             int rectLeft = xStart - AMAN_WIDTH + AMAN_TIMELINE_WIDTH + AMAN_LABEL_SEP_FROM_TIMELINE;
@@ -189,10 +179,10 @@ void AmanTimelineView::drawAircraftChain(HDC hdc, int timeNow, int xStart, int y
 
             Ellipse(hdc, xStart - AMAN_DOT_RADIUS, acPos - AMAN_DOT_RADIUS, xStart + AMAN_DOT_RADIUS,
                 acPos + AMAN_DOT_RADIUS);
-            rect = { rectLeft, rectTop, rectRight, rectBottom };
+            boundingBox = { rectLeft, rectTop, rectRight, rectBottom };
 
             MoveToEx(hdc, xStart, acPos, NULL);
-            LineTo(hdc, rect.right, rect.top + AMAN_AIRCRAFT_LINE_HEIGHT / 2);
+            LineTo(hdc, boundingBox.right, boundingBox.top + AMAN_AIRCRAFT_LINE_HEIGHT / 2);
 
             prevTop = rectTop;
         }
@@ -211,54 +201,86 @@ void AmanTimelineView::drawAircraftChain(HDC hdc, int timeNow, int xStart, int y
 
             Ellipse(hdc, xStart + AMAN_TIMELINE_WIDTH - AMAN_DOT_RADIUS, acPos - AMAN_DOT_RADIUS,
                 xStart + AMAN_TIMELINE_WIDTH + AMAN_DOT_RADIUS, acPos + AMAN_DOT_RADIUS);
-            rect = { rectLeft, rectTop, rectRight, rectBottom };
+            boundingBox = { rectLeft, rectTop, rectRight, rectBottom };
 
             MoveToEx(hdc, xStart + AMAN_TIMELINE_WIDTH, acPos, NULL);
-            LineTo(hdc, rect.left, rect.top + AMAN_AIRCRAFT_LINE_HEIGHT / 2);
+            LineTo(hdc, boundingBox.left, boundingBox.top + AMAN_AIRCRAFT_LINE_HEIGHT / 2);
 
             prevTop = rectTop;
         }
 
-        const char* nextFix = "-----";
-        if (strlen(aircraft.nextFix.c_str()) > 0) {
-            nextFix = aircraft.nextFix.c_str();
-        }
-
+        std::string nextFix = aircraft.nextFix.size() > 0 ? aircraft.nextFix : "-----";
         int minutesBehindPreceeding = round(aircraft.secondsBehindPreceeding / 60);
         int remainingDistance = round(aircraft.distLeft);
 
-        drawMultiColorText(hdc, rect.TopLeft(), {
+        drawMultiColorText(hdc, boundingBox.TopLeft(), {
             {4, false, defaultColor, aircraft.arrivalRunway},
             {9, false, defaultColor, aircraft.callsign},
             {5, false, defaultColor, aircraft.icaoType},
             {2, false, defaultColor, {aircraft.wtc}},
-            {7, false, directRoutingColor, nextFix},
+            {7, false, defaultColor, nextFix},
             {3, false, defaultColor, std::to_string(minutesBehindPreceeding)},
             {4, true, defaultColor, std::to_string(remainingDistance)}
         });
 
+        if (hasKnownViaFix) {
+            // Draw mark indicating via fix 
+            int markPos = boundingBox.left + 85;
+            SelectObject(hdc, VIA_FIX_COLORS[aircraft.viaFixIndex]);
+            MoveToEx(hdc, markPos, boundingBox.top + 2, NULL);
+            LineTo(hdc, markPos, boundingBox.bottom - 3);
+        }
+
         if (aircraft.isSelected) {
-            rect.InflateRect(2, 2);
-            FrameRect(hdc, rect, brush);
+            boundingBox.InflateRect(2, 2);
+            FrameRect(hdc, boundingBox, brush);
         }
 
         prevTop -= AMAN_AIRCRAFT_LINE_SEPARATION;
+
         SetTextColor(hdc, oldTextColor);
+        SelectObject(hdc, oldPen);
+        SelectObject(hdc, oldBrush);
     }
 }
 
 void AmanTimelineView::drawMultiColorText(HDC hdc, CPoint pt, std::vector<TextSegment> texts, bool vertical) {
     CRect startRect;
     startRect.MoveToXY(pt);
+    COLORREF oldColor = GetTextColor(hdc);
+    COLORREF prevColor = oldColor;
     for each (auto item in texts) {
         std::stringstream ss;
         ss << (item.rightAligned ? std::right : std::left) << std::setw(item.width) << item.text;
 
         std::string outputText = ss.str();
 
-        SetTextColor(hdc, item.color);
+        if (prevColor != item.color) {
+            prevColor = SetTextColor(hdc, item.color);
+        }
         DrawText(hdc, outputText.c_str(), outputText.length(), &startRect, DT_LEFT | DT_CALCRECT);
         DrawText(hdc, outputText.c_str(), outputText.length(), &startRect, DT_LEFT);
         vertical ? startRect.MoveToY(startRect.bottom) : startRect.MoveToX(startRect.right);
+    }
+    if (oldColor != prevColor) {
+        SetTextColor(hdc, oldColor);
+    }
+}
+
+void AmanTimelineView::drawViafixColorLegend(HDC hdc, std::shared_ptr<AmanTimeline> timeline, CPoint position) {
+    if (!timeline->getViaFixes().empty()) {
+        SelectObject(hdc, AMAN_LEGEND_FONT);
+        CRect startRect;
+        startRect.MoveToXY(position);
+
+        for (int i = 0; i < timeline->getViaFixes().size(); i++) {
+            auto viafix = "  " + timeline->getViaFixes().at(i) + " ";
+            DrawText(hdc, viafix.c_str(), viafix.length(), &startRect, DT_LEFT | DT_CALCRECT);
+            DrawText(hdc, viafix.c_str(), viafix.length(), &startRect, DT_LEFT);
+            SelectObject(hdc, VIA_FIX_COLORS[i]);
+            MoveToEx(hdc, startRect.left + 5, startRect.top + 3, NULL);
+            LineTo(hdc, startRect.left + 5, startRect.bottom - 5);
+            startRect.MoveToY(startRect.bottom);
+        }
     }
 }

@@ -1,0 +1,9 @@
+{
+    "timelines": [
+        {
+            "alias": "01L/01R",
+            "targetFixes": [ "OBW40", "ONE40" ],
+            "viaFixes": [ "RIPAM", "LUNIP", "ESEBA", "INREX", "BELGU", "ADOPI", "RIPAM" ]
+        }
+    ]
+}

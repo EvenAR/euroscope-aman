@@ -13,14 +13,16 @@ AmanController::~AmanController() {}
 
 void AmanController::modelLoaded() {
     if (this->amanWindow == nullptr) {
-        this->amanWindow = std::make_shared<AmanWindow>(this, amanModel->getAvailableIds());
+        this->amanWindow = std::make_shared<AmanWindow>(this);
     }
 }
 
 void AmanController::modelUpdated() {
     if (this->amanWindow != nullptr) {
         auto timelines = this->amanModel->getTimelines(activeTimelines);
+        auto loadedDefinitions = this->amanModel->getAvailableIds();
         this->amanWindow->update(timelines);
+        this->amanWindow->setAvailableTimelines(loadedDefinitions);
     }
 }
 
@@ -37,3 +39,8 @@ void AmanController::toggleTimeline(const std::string& id) {
     }
     modelUpdated();
 }
+
+void AmanController::reloadProfiles() {
+    this->amanModel->requestReload();
+}
+
