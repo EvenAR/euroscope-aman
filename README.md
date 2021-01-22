@@ -41,7 +41,7 @@ The information displayed for each aircraft has the following layout:
 <wake turbulence category>
 <assigned direct fix>
 <minutes behind preceeding aircraft>
-<distance to touch down>
+<distance to final target fix>
 ```
 
 ## Download
