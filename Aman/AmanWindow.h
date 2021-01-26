@@ -43,6 +43,8 @@ private:
     bool moveWindow = false;
     bool doResize = false;
 
+    std::unordered_map<std::string, uint32_t> zoomLevels;
+
     void collapse();
     void expand();
     bool isExpanded();
@@ -54,4 +56,5 @@ private:
     void mouseWheelSrolled(CPoint cursorPosClient, short delta) override;
     void windowClosed() override;
     void drawContent(HDC hdc, CRect clientRect) override;
+    uint32_t getZoomLevel(const std::string& id);
 };

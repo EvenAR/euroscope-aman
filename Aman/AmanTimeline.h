@@ -17,13 +17,9 @@ public:
     std::vector<std::string> getFixes() { return fixes; }
     std::vector<std::string> getViaFixes() { return viaFixes; }
 
-    int getRange() { return seconds; }
-    void setRange(int seconds) { this->seconds = seconds; };
-
     ~AmanTimeline();
 
 private:
-    int seconds = 3600;
     std::string alias;
     std::vector<AmanAircraft> aircraftList;
     std::vector<std::string> viaFixes;

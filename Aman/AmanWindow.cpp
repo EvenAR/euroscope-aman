@@ -11,6 +11,7 @@
 
 #define THREE_HOURS 10800
 #define FIVE_MINUTES 300
+#define DEFAULT_ZOOM 1800
 
 #define TIMELINES_RELOAD "[Reload aman-config.json] "
 
@@ -76,7 +77,8 @@ void AmanWindow::drawContent(HDC hdc, CRect clientRect) {
     // the main thread is not currently writing to the shared AmanTimeline-vector
     renderTimelinesMutex.lock();
     for (auto& timeline : *timelinesToRender) {
-        previousTimelineArea = AmanTimelineView::render(timeline, timelineView, hdc, previousTimelineArea.right);
+        auto zoom = getZoomLevel(timeline->getIdentifier());
+        previousTimelineArea = AmanTimelineView::render(hdc, timeline, timelineView, zoom, previousTimelineArea.right);
         timelineIds.push_back(timeline->getIdentifier());
     }
     renderTimelinesMutex.unlock();
@@ -87,6 +89,14 @@ void AmanWindow::drawContent(HDC hdc, CRect clientRect) {
 
     popupMenu->setActiveItems(timelineIds);
     this->menuBar->render(hdc, titleBarRect);
+}
+
+uint32_t AmanWindow::getZoomLevel(const std::string& id) {
+    if (this->zoomLevels.count(id)) {
+        return this->zoomLevels[id];
+    } else {
+        return DEFAULT_ZOOM;
+    }
 }
 
 std::shared_ptr<AmanTimeline> AmanWindow::getTimelineAt(timelineCollection timelines, CPoint cursorPosition) {
@@ -150,19 +160,23 @@ void AmanWindow::mouseMoved(CPoint cursorPosClient, CPoint cursorPosScreen) {
 }
 
 void AmanWindow::mouseWheelSrolled(CPoint cursorPosClient, short delta) {
+    if (menuBar->onMouseScroll(delta)) {
+        requestRepaint();
+        return;
+    }
+
     auto timelinePointedAt = getTimelineAt(timelinesToRender, cursorPosClient);
+
     if (timelinePointedAt) {
-        auto currentRange = timelinePointedAt->getRange();
+        std::string id = timelinePointedAt->getIdentifier();
+        auto currentRange = getZoomLevel(id);
         auto newRange = currentRange - delta;
         auto limitReached = newRange < FIVE_MINUTES || newRange > THREE_HOURS;
 
         if (!limitReached) {
-            timelinePointedAt->setRange(newRange);
+            this->zoomLevels[id] = newRange;
             requestRepaint();
         }
-    }
-    if (menuBar->onMouseScroll(delta)) {
-        requestRepaint();
     }
 }
 
