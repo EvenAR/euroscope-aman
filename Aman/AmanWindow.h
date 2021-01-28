@@ -25,6 +25,8 @@ public:
 
     void update(timelineCollection timelines);
 
+    void setTimelineHorizon(const std::string& id, uint32_t minutes);
+
 private:
     AmanController* controller;
     std::shared_ptr<TitleBar> titleBar;

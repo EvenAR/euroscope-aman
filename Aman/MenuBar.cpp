@@ -50,6 +50,7 @@ bool MenuBar::onMouseMove(CPoint cursorPos) {
             return true;
         }
     }
+    return false;
 }
 
 // Returns true if parent window should re-render
@@ -64,6 +65,7 @@ bool MenuBar::onMouseClick(CPoint cursorPos) {
             }
         } else if (menu.openBtnArea.PtInRect(cursorPos)) {
             menu.isOpen = !menu.isOpen;
+            return true;
         }
     }
     return false;

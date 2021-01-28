@@ -18,7 +18,6 @@ public:
     std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> getTimelines(std::vector<std::string>& ids);
 
     void requestReload();
-
     virtual ~AmanPlugIn();
 
 private:

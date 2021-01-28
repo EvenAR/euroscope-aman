@@ -9,9 +9,10 @@
 
 #include <algorithm> 
 
-#define THREE_HOURS 10800
-#define FIVE_MINUTES 300
-#define DEFAULT_ZOOM 1800
+// In minutes:
+#define MAX_HORIZON 240
+#define MIN_HORIZON 5
+#define DEFAULT_HORIZON 30
 
 #define TIMELINES_RELOAD "[Reload aman-config.json] "
 
@@ -77,8 +78,8 @@ void AmanWindow::drawContent(HDC hdc, CRect clientRect) {
     // the main thread is not currently writing to the shared AmanTimeline-vector
     renderTimelinesMutex.lock();
     for (auto& timeline : *timelinesToRender) {
-        auto zoom = getZoomLevel(timeline->getIdentifier());
-        previousTimelineArea = AmanTimelineView::render(hdc, timeline, timelineView, zoom, previousTimelineArea.right);
+        auto zoomSec = getZoomLevel(timeline->getIdentifier()) * 60;
+        previousTimelineArea = AmanTimelineView::render(hdc, timeline, timelineView, zoomSec, previousTimelineArea.right);
         timelineIds.push_back(timeline->getIdentifier());
     }
     renderTimelinesMutex.unlock();
@@ -95,7 +96,7 @@ uint32_t AmanWindow::getZoomLevel(const std::string& id) {
     if (this->zoomLevels.count(id)) {
         return this->zoomLevels[id];
     } else {
-        return DEFAULT_ZOOM;
+        return DEFAULT_HORIZON; 
     }
 }
 
@@ -170,14 +171,18 @@ void AmanWindow::mouseWheelSrolled(CPoint cursorPosClient, short delta) {
     if (timelinePointedAt) {
         std::string id = timelinePointedAt->getIdentifier();
         auto currentRange = getZoomLevel(id);
-        auto newRange = currentRange - delta;
-        auto limitReached = newRange < FIVE_MINUTES || newRange > THREE_HOURS;
+        auto newRange = currentRange - delta / 60;
+        auto limitReached = newRange < MIN_HORIZON || newRange > MAX_HORIZON;
 
         if (!limitReached) {
             this->zoomLevels[id] = newRange;
             requestRepaint();
         }
     }
+}
+
+void AmanWindow::setTimelineHorizon(const std::string& id, uint32_t minutes) {
+    this->zoomLevels[id] = min(minutes, MAX_HORIZON);
 }
 
 void AmanWindow::windowClosed() {

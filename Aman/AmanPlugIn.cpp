@@ -33,10 +33,10 @@ AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE, "Arrival Manager", "2.0.0
     std::string fullPluginPathStr(fullPluginPath);
     pluginDirectory = fullPluginPathStr.substr(0, fullPluginPathStr.find_last_of("\\"));
 
+    amanController = std::make_shared<AmanController>(this);
+
     loadTimelines("aman-config.json");
 
-    amanController = std::make_shared<AmanController>(this);
-    amanController->modelLoaded();
     amanController->modelUpdated();
 }
 
@@ -180,6 +180,12 @@ void AmanPlugIn::loadTimelines(const std::string& filename) {
             alias = "";
             for (const auto& piece : targetFixes) alias += piece + "/";
             alias = alias.substr(0, alias.size() - 1);
+        }
+
+        uint32_t startHorizon;
+        if (object.HasMember("startHorizon") && object["startHorizon"].IsUint()) {
+            startHorizon = object["startHorizon"].GetUint();
+            amanController->setTimelineHorizon(alias, startHorizon);
         }
 
         timelines.push_back(std::make_shared<AmanTimeline>(targetFixes, viaFixes, alias));
