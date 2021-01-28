@@ -19,7 +19,7 @@ Example `aman-config.json`:
             "alias": "...",
             "targetFixes": [ "....", "...." ],
             "viaFixes": [ "..." ],
-            "initialHorizon": ...
+            "initialHorizon": 60
         }
     ]
 }
