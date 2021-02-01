@@ -52,3 +52,6 @@ The information displayed for each aircraft has the following layout:
 The plugin .dll-file can be found in the Release folder. [Direct link](https://github.com/EvenAR/euroscope-aman/raw/master/Release/Aman.dll).
 
 ![Window](https://i.gyazo.com/52cf2fbc1d6eb48f4a77b71784e7c61f.png)
+
+
+> Vatsim, air traffic control, ATC, flight simulator
