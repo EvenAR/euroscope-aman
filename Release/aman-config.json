@@ -2,9 +2,10 @@
     "timelines": [
         {
             "alias": "19R/19L",
-            "targetFixes": [ "GSW40", "GME40" ],
+            "targetFixes": [ "TITLA", "BAVAD" ],
             "viaFixes": [ "ADOPI", "LUNIP", "ESEBA", "INREX", "BELGU", "RIPAM" ],
-            "startHorizon": 10
+            "startHorizon": 10,
+            "destinationAirports": [ "ENGM" ]
         }
     ]
 }

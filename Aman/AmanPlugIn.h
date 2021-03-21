@@ -27,11 +27,12 @@ private:
 
     virtual void OnTimer(int Counter);
 
+    bool hasCorrectDestination(CFlightPlanData fpd, std::vector<std::string> destinationAirports);
     int getFixIndexByName(CFlightPlanExtractedRoute extractedRoute, const std::string& fixName);
     int getFirstViaFixIndex(CFlightPlanExtractedRoute extractedRoute, std::vector<std::string> viaFixes);
     double findRemainingDist(CRadarTarget radarTarget, CFlightPlanExtractedRoute extractedRoute, int fixIndex);
 
-    std::vector<AmanAircraft> getInboundsForFix(const std::string& fixName, std::vector<std::string> viaFixes);
+    std::vector<AmanAircraft> getInboundsForFix(const std::string& fixName, std::vector<std::string> viaFixes, std::vector<std::string> destinationAirports);
     void loadTimelines(const std::string& filename);
     
     static std::vector<std::string> splitString(const std::string& string, const char delim);
