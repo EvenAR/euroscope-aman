@@ -38,9 +38,14 @@ AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE, "Arrival Manager", "2.1.0
     loadTimelines("aman-config.json");
 
     amanController->modelUpdated();
+
+    runAselWatcher = true;
+    aselWatcherThread = CreateThread(NULL, 0, AmanPlugIn::lookForNewASEL, this, 0, &aselWatcherThreadId);
 }
 
 AmanPlugIn::~AmanPlugIn() { 
+    runAselWatcher = false;
+    WaitForSingleObject(aselWatcherThread, INFINITE);
 }
 
 std::set<std::string> AmanPlugIn::getAvailableIds() {
@@ -265,6 +270,10 @@ std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> AmanPlugIn::getTimel
 void AmanPlugIn::requestReload() {
     timelines.clear();
     loadTimelines("aman-config.json");
+    amanController->modelUpdated();
+}
+
+void AmanPlugIn::onNewAsel(const std::string& asel) {
     amanController->modelUpdated();
 }
 
