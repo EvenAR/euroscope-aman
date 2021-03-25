@@ -51,7 +51,7 @@ std::set<std::string> AmanPlugIn::getAvailableIds() {
     return set;
 }
 
-std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixName, std::vector<std::string> viaFixes) {
+std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixName, std::vector<std::string> viaFixes, std::vector<std::string> destinationAirports) {
     long int timeNow = static_cast<long int>(std::time(nullptr)); // Current UNIX-timestamp in seconds
 
     CRadarTarget asel = RadarTargetSelectASEL();
@@ -69,8 +69,9 @@ std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixNa
 
         int targetFixIndex = getFixIndexByName(route, fixName);
 
-        if (targetFixIndex != -1 &&
-            route.GetPointDistanceInMinutes(targetFixIndex) > -1) { // Target fix found and has not been passed
+        if (targetFixIndex != -1 && // Target fix found
+            route.GetPointDistanceInMinutes(targetFixIndex) > -1 && // Target fix has not been passed
+            hasCorrectDestination(rt.GetCorrelatedFlightPlan().GetFlightPlanData(), destinationAirports)) { // Aircraft going to the correct destination
             bool fixIsDestination = targetFixIndex == route.GetPointsNumber() - 1;
             int timeToFix;
 
@@ -173,6 +174,13 @@ void AmanPlugIn::loadTimelines(const std::string& filename) {
             }
         }
 
+        std::vector<std::string> destinationAirports;
+        if (object.HasMember("destinationAirports") && object["destinationAirports"].IsArray()) {
+            for (auto& destination : object["destinationAirports"].GetArray()) {
+                destinationAirports.push_back(destination.GetString());
+            }
+        }
+
         std::string alias;
         if (object.HasMember("alias") && object["alias"].IsString()) {
             alias = object["alias"].GetString();
@@ -188,8 +196,13 @@ void AmanPlugIn::loadTimelines(const std::string& filename) {
             amanController->setTimelineHorizon(alias, startHorizon);
         }
 
-        timelines.push_back(std::make_shared<AmanTimeline>(targetFixes, viaFixes, alias));
+        timelines.push_back(std::make_shared<AmanTimeline>(targetFixes, viaFixes, destinationAirports, alias));
     }
+}
+
+bool AmanPlugIn::hasCorrectDestination(CFlightPlanData fpd, std::vector<std::string> destinationAirports) {
+    return destinationAirports.size() == 0 ? 
+        true : std::find(destinationAirports.begin(), destinationAirports.end(), fpd.GetDestination()) != destinationAirports.end();
 }
 
 int AmanPlugIn::getFixIndexByName(CFlightPlanExtractedRoute extractedRoute, const std::string& fixName) {
@@ -237,7 +250,7 @@ std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> AmanPlugIn::getTimel
 
                 pAircraftList->clear();
                 for each (auto finalFix in fixes) {
-                    auto var = getInboundsForFix(finalFix, viaFixes);
+                    auto var = getInboundsForFix(finalFix, viaFixes, timeline->getDestinationAirports());
                     pAircraftList->insert(pAircraftList->end(), var.begin(), var.end());
                 }
 
