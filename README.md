@@ -13,14 +13,14 @@ Example `aman-config.json`:
             "alias": "19R/19L",
             "targetFixes": [ "GSW40", "GME40" ],
             "viaFixes": [ "ADOPI", "LUNIP", "ESEBA", "INREX", "BELGU", "RIPAM" ],
-            "initialHorizon": 120,
+            "startHorizon": 120,
             "destinationAirports": [ "ENGM" ]
         },
         {
             "alias": "...",
             "targetFixes": [ "....", "...." ],
             "viaFixes": [ "..." ],
-            "initialHorizon": 60,
+            "startHorizon": 60,
             "destinationAirports": [ "....", "...." ]
         }
     ]
@@ -32,7 +32,7 @@ Example `aman-config.json`:
 | `targetFixes`    | Based on the assigned route, any aircraft expected to pass one of these fixes are shown in the timeline. When exactly two fixes are specified, a dual timeline is shown with the first fix on the left side and the second on the right side.
 | `viaFixes`       | (optional) Each fix will be assigned a color, and aircraft with a route initially (any direct routings ignored) going through one of these fixes will be marked with the color. For example, this can give a better overview of which direction each aircraft is coming from. Only eight different colors are available at the moment.
 | `alias`          | (optional) If used, this will be the ID of the timeline. If not, the name will be generated from `targetFixes`.
-| `initialHorizon` | (optional) If used, this will be the initial time horizon (in minutes) when the timeline is loaded.
+| `startHorizon`   | (optional) If used, this will be the initial time horizon (in minutes) when the timeline is loaded.
 | `destinationAirports` | (optional) If used, aircraft whose destination is not in `destinationAirports` will not be included.
 
 The information displayed for each aircraft has the following layout:
