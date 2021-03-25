@@ -2,21 +2,59 @@
 A simple arrival manager plugin for EuroScope. Uses the position predictions provided by EuroScope to visualize the arrival flow for a given airport or waypoint.
 
 ## How to use
-The AMAN-display will appear in a separate window once the plugin has been loaded. Use the following commands to configure the view:
+The AMAN-display will appear in a separate window once the plugin has been loaded. Timelines are loaded from `aman-config.json` which must be placed in the same directory as the plugin `dll`. The file content can be reloaded at run time through the menu. 
 
-| Command                                    | Description                                                                                                                                 |
-|--------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
-| `.aman show`                               | opens the window if it's been closed                                                                                                        |
-| `.aman add WAYPT1`                         | adds a timeline for a single waypoint                                                                                                       |
-| `.aman add WAYPT1/WAYPT2`                  | adds a split view where aircraft inbound for `WAYPT1` are shown on the left side and inbounds to `WAYPT2` are shown on the right side |
-| `.aman add WAYPT1/WAYPT2/WAYPT3/...`       | adds a timeline showing inbounds for multiple waypoints                                                                                     |
-| `.aman add <waypoints> VIA1,VIA2,VIA3,...` | adds a timeline with call signs colored based on which via-waypoint the aircraft is coming from                                             |
-| `.aman del X`                              | removes a timeline where X is the position of the timeline you want to remove, counting from the left (1 = the leftmost)                    |
-| `.aman clear`                              | removes all timelines                                                                                                                       |
+Example `aman-config.json`:
+
+```json
+{
+    "timelines": [
+        {
+            "alias": "19R/19L",
+            "targetFixes": [ "GSW40", "GME40" ],
+            "viaFixes": [ "ADOPI", "LUNIP", "ESEBA", "INREX", "BELGU", "RIPAM" ],
+            "initialHorizon": 120,
+            "destinationAirports": [ "ENGM" ]
+        },
+        {
+            "alias": "...",
+            "targetFixes": [ "....", "...." ],
+            "viaFixes": [ "..." ],
+            "initialHorizon": 60,
+            "destinationAirports": [ "....", "...." ]
+        }
+    ]
+}
+```
+
+| Property         | Description
+|------------------|---------------
+| `targetFixes`    | Based on the assigned route, any aircraft expected to pass one of these fixes are shown in the timeline. When exactly two fixes are specified, a dual timeline is shown with the first fix on the left side and the second on the right side.
+| `viaFixes`       | (optional) Each fix will be assigned a color, and aircraft with a route initially (any direct routings ignored) going through one of these fixes will be marked with the color. For example, this can give a better overview of which direction each aircraft is coming from. Only eight different colors are available at the moment.
+| `alias`          | (optional) If used, this will be the ID of the timeline. If not, the name will be generated from `targetFixes`.
+| `initialHorizon` | (optional) If used, this will be the initial time horizon (in minutes) when the timeline is loaded.
+| `destinationAirports` | (optional) If used, aircraft whose destination is not in `destinationAirports` will not be included.
+
+The information displayed for each aircraft has the following layout:
+
+![](https://i.gyazo.com/76f58bf5317288c11fdf2580356c913b.png)
+
+```
+<assigned runway>
+<call sign>
+<"via fix" indicator> (when applicable)
+<aircraft type>
+<wake turbulence category>
+<assigned direct fix>
+<minutes behind preceeding aircraft>
+<distance to final target fix>
+```
 
 ## Download
-- Note: It is recommended to load the plugin in a secondary instance of EuroScope (connected to VATSIM via proxy) in case the plugin causes EuroScope to crash.
 
 The plugin .dll-file can be found in the Release folder. [Direct link](https://github.com/EvenAR/euroscope-aman/raw/master/Release/Aman.dll).
 
-![alt text](https://i.gyazo.com/84338383130d1a59cedba452c61fc1a6.png)
+![Window](https://i.gyazo.com/52cf2fbc1d6eb48f4a77b71784e7c61f.png)
+
+
+> Vatsim, air traffic control, ATC, flight simulator

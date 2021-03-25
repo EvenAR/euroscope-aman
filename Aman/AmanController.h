@@ -10,10 +10,10 @@ class AmanPlugIn;
 class AmanController {
 public:
     AmanController(AmanPlugIn* model);
-    void modelLoaded();
     void modelUpdated();
     void toggleTimeline(const std::string& id);
     void reloadProfiles();
+    void setTimelineHorizon(const std::string& id, uint32_t minutes);
 
     ~AmanController();
 

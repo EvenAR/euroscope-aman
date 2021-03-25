@@ -8,7 +8,7 @@ class AmanTimeline;
 
 class AmanTimelineView {
 public:
-    static CRect render(std::shared_ptr<AmanTimeline> timeline, CRect clientRect, HDC memdc, int xOffset);
+    static CRect render(HDC memdc, std::shared_ptr<AmanTimeline> timeline, CRect clientRect, uint32_t zoom, int xOffset);
     static CRect getArea(std::shared_ptr<AmanTimeline> timeline, CRect clientRect, int i);
 
 private:

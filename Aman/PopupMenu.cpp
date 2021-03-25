@@ -50,6 +50,7 @@ bool PopupMenu::onMouseClick(CPoint pt) {
             return true;
         }
     }
+    return false;
 }
 
 bool PopupMenu::onMouseHover(CPoint pt) {

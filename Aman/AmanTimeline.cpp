@@ -6,10 +6,11 @@
 #include "AmanAircraft.h"
 #include "AmanTimeline.h"
 
-AmanTimeline::AmanTimeline(std::vector<std::string> fixes, std::vector<std::string> viaFixes, const std::string& alias) {
+AmanTimeline::AmanTimeline(std::vector<std::string> fixes, std::vector<std::string> viaFixes, std::vector<std::string> destinations, const std::string& alias) {
     this->fixes = fixes;
     this->viaFixes = viaFixes;
     this->aircraftList = std::vector<AmanAircraft>();
+    this->destinationAirports = destinations;
     this->alias = alias;
 }
 

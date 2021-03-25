@@ -22,7 +22,7 @@ CRect AmanTimelineView::getArea(std::shared_ptr<AmanTimeline> timeline, CRect cl
     return CRect(xOffset, clientRect.top, xOffset + totalWidth, clientRect.bottom);
 }
 
-CRect AmanTimelineView::render(std::shared_ptr<AmanTimeline> timeline, CRect clientRect, HDC hdc, int xOffset) {
+CRect AmanTimelineView::render(HDC hdc, std::shared_ptr<AmanTimeline> timeline, CRect clientRect, uint32_t zoom, int xOffset) {
     CRect myTotalArea = getArea(timeline, clientRect, xOffset);
 
     long int unixTimestamp = static_cast<long int>(std::time(nullptr)); // Current UNIX-unixTimestamp in seconds
@@ -34,7 +34,7 @@ CRect AmanTimelineView::render(std::shared_ptr<AmanTimeline> timeline, CRect cli
     }
 
     int presentTimeStartY = myTotalArea.bottom - AMAN_TIMELINE_REALTIME_OFFSET;
-    double pixelsPerSecY = (float)(presentTimeStartY - myTotalArea.top) / (float)timeline->getRange();
+    double pixelsPerSecY = (float)(presentTimeStartY - myTotalArea.top) / (float)zoom;
     double pixelsPerMinuteY = 60.0 * pixelsPerSecY;
 
     // Timeline bar
@@ -63,7 +63,7 @@ CRect AmanTimelineView::render(std::shared_ptr<AmanTimeline> timeline, CRect cli
     int firstMinute = unixTimestampAsMinutes % 60;
     int firstMinutePositionY = floor(presentTimeStartY - secToNextMin * pixelsPerSecY);
     int pastMinutesToDisplay = floor(AMAN_TIMELINE_REALTIME_OFFSET / pixelsPerMinuteY);
-    int futureMinutesToDisplay = floor(timeline->getRange() / 60);
+    int futureMinutesToDisplay = floor(zoom / 60);
 
     for (int minute = -pastMinutesToDisplay; minute < futureMinutesToDisplay; minute++) {
         int tickPosY = firstMinutePositionY - (minute * pixelsPerMinuteY);

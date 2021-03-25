@@ -7,15 +7,10 @@
 AmanController::AmanController(AmanPlugIn* plugin) {
     this->amanModel = plugin;
     this->amanWindow = NULL;
+    this->amanWindow = std::make_shared<AmanWindow>(this);
 }
 
 AmanController::~AmanController() {}
-
-void AmanController::modelLoaded() {
-    if (this->amanWindow == nullptr) {
-        this->amanWindow = std::make_shared<AmanWindow>(this);
-    }
-}
 
 void AmanController::modelUpdated() {
     if (this->amanWindow != nullptr) {
@@ -42,5 +37,9 @@ void AmanController::toggleTimeline(const std::string& id) {
 
 void AmanController::reloadProfiles() {
     this->amanModel->requestReload();
+}
+
+void AmanController::setTimelineHorizon(const std::string& id, uint32_t minutes) {
+    this->amanWindow->setTimelineHorizon(id, minutes);
 }
 
