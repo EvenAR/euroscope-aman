@@ -141,6 +141,15 @@ void AmanPlugIn::OnTimer(int Counter) {
     amanController->modelUpdated();
 }
 
+bool AmanPlugIn::OnCompileCommand(const char* sCommandLine) {
+    if (strcmp(sCommandLine, ".aman open") == 0) {
+        return this->amanController->openWindow();
+    } else if (strcmp(sCommandLine, ".aman close") == 0) {
+        return this->amanController->closeWindow();
+    }
+    return false;
+}
+
 void AmanPlugIn::loadTimelines(const std::string& filename) {
     std::ifstream file(pluginDirectory + "\\" + filename);
     std::string fileContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
@@ -218,6 +227,10 @@ void AmanPlugIn::loadTimelines(const std::string& filename) {
 
             timelines.push_back(std::make_shared<AmanTimeline>(targetFixes, viaFixes, destinationAirports, tagItems, itr->name.GetString()));
         }
+    }
+
+    if (timelines.size() == 1) {
+        this->amanController->toggleTimeline(timelines.at(0)->getIdentifier());
     }
 }
 

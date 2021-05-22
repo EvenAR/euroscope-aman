@@ -73,6 +73,12 @@ A tag layout has a set of tag values, which will be drawn in the specified order
 | `isViaFixIndicator` | (optional) If true, the value will be colored based on the "via fix". Defaults to `false`.
 | `defaultValue`      | (optional) Can only be used if `source` is `directRouting` or `static`. Defaults to `""`.
 
+## Available dot-commands
+
+| Command             | Description
+|---------------------|---------------
+| `.aman open`        | Opens the window 
+| `.aman close`       | Closes the window
 
 ![Window](https://i.gyazo.com/52cf2fbc1d6eb48f4a77b71784e7c61f.png)
 

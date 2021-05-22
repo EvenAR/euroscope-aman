@@ -14,7 +14,7 @@
 #define MIN_HORIZON 5
 #define DEFAULT_HORIZON 30
 
-#define TIMELINES_RELOAD "[Reload aman-config.json] "
+#define TIMELINES_RELOAD "[Reload config] "
 
 AmanWindow::AmanWindow(AmanController* controller) : Window("AmanWindow", "AMAN") {
     this->controller = controller;
@@ -77,10 +77,12 @@ void AmanWindow::drawContent(HDC hdc, CRect clientRect) {
     // This code runs on the window's thread, so we must make sure
     // the main thread is not currently writing to the shared AmanTimeline-vector
     renderTimelinesMutex.lock();
-    for (auto& timeline : *timelinesToRender) {
-        auto zoomSec = getZoomLevel(timeline->getIdentifier()) * 60;
-        previousTimelineArea = AmanTimelineView::render(hdc, timeline, timelineView, zoomSec, previousTimelineArea.right);
-        timelineIds.push_back(timeline->getIdentifier());
+    if (timelinesToRender != nullptr) {
+        for (auto& timeline : *timelinesToRender) {
+            auto zoomSec = getZoomLevel(timeline->getIdentifier()) * 60;
+            previousTimelineArea = AmanTimelineView::render(hdc, timeline, timelineView, zoomSec, previousTimelineArea.right);
+            timelineIds.push_back(timeline->getIdentifier());
+        }
     }
     renderTimelinesMutex.unlock();
 
@@ -179,6 +181,10 @@ void AmanWindow::mouseWheelSrolled(CPoint cursorPosClient, short delta) {
             requestRepaint();
         }
     }
+}
+
+void AmanWindow::closeRequested() {
+    controller->closeWindow();
 }
 
 void AmanWindow::setTimelineHorizon(const std::string& id, uint32_t minutes) {

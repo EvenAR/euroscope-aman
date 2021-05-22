@@ -124,8 +124,7 @@ LRESULT CALLBACK Window::handleMessage(UINT message, WPARAM wParam, LPARAM lPara
 
     switch (message) {
     case WM_CLOSE: {
-        // Should not close 
-        return 0;
+        closeRequested();
     } break;
     case WM_DESTROY: {
         windowClosed();

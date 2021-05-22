@@ -56,6 +56,7 @@ private:
     void mouseReleased(CPoint cursorPosClient) override;
     void mouseMoved(CPoint cursorPosClient, CPoint cursorPosScreen) override;
     void mouseWheelSrolled(CPoint cursorPosClient, short delta) override;
+    void closeRequested() override;
     void windowClosed() override;
     void drawContent(HDC hdc, CRect clientRect) override;
     uint32_t getZoomLevel(const std::string& id);

@@ -26,19 +26,7 @@ AmanTimeline::AmanTimeline(
 }
 
 std::string AmanTimeline::getIdentifier() {
-    if(!alias.empty()) return alias;
-    switch (fixes.size()) {
-    case 1:
-        return fixes.at(0);
-    case 2:
-        return fixes.at(0) + "/" + fixes.at(1);
-    default:
-        std::ostringstream fixesSs;
-        copy(fixes.begin(), fixes.end(), std::ostream_iterator<std::string>(fixesSs, "/"));
-        std::string output = fixesSs.str();
-        output.pop_back(); // Remove last '/'
-        return output;
-    }
+    return alias;
 }
 
 bool AmanTimeline::isDual() { return fixes.size() == 2; }

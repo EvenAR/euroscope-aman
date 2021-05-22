@@ -19,6 +19,7 @@ protected:
     virtual void mouseReleased(CPoint cursorPosClient) {};
     virtual void mouseMoved(CPoint cursorPosClient, CPoint cursorPosScreen) {};
     virtual void mouseWheelSrolled(CPoint cursorPosClient, short delta) {};
+    virtual void closeRequested() {};
     virtual void windowClosed() {};
     virtual void drawContent(HDC hdc, CRect clientRect) {};
 
