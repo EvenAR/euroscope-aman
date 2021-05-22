@@ -2,16 +2,27 @@
 
 #include <iterator>
 #include <sstream>
+#include <numeric>
 
 #include "AmanAircraft.h"
 #include "AmanTimeline.h"
+#include "AmanTagItem.h"
 
-AmanTimeline::AmanTimeline(std::vector<std::string> fixes, std::vector<std::string> viaFixes, std::vector<std::string> destinations, const std::string& alias) {
+AmanTimeline::AmanTimeline(
+                std::vector<std::string> fixes,
+                std::vector<std::string> viaFixes, 
+                std::vector<std::string> destinations, 
+                std::vector<std::shared_ptr<TagItem>> tagItems, 
+                const std::string& alias) {
     this->fixes = fixes;
     this->viaFixes = viaFixes;
     this->aircraftList = std::vector<AmanAircraft>();
     this->destinationAirports = destinations;
+    this->tagItems = tagItems;
     this->alias = alias;
+
+    auto addWidth = [](uint32_t acc, std::shared_ptr<TagItem> tagItem) { return acc + tagItem->getMaxWidth(); };
+    this->width = std::accumulate(tagItems.begin(), tagItems.end(), 0, addWidth);
 }
 
 std::string AmanTimeline::getIdentifier() {

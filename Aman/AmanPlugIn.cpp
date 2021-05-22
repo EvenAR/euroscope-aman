@@ -5,6 +5,7 @@
 #include "AmanPlugIn.h"
 #include "AmanTimeline.h"
 #include "AmanWindow.h"
+#include "AmanTagItem.h"
 #include "stdafx.h"
 #include "windows.h"
 #include "rapidjson/document.h"
@@ -17,6 +18,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <map>
 
 #define TO_UPPERCASE(str) std::transform(str.begin(), str.end(), str.begin(), ::toupper);
 #define REMOVE_EMPTY(strVec, output)                                                                                   \
@@ -45,7 +47,7 @@ AmanPlugIn::~AmanPlugIn() {
 
 std::set<std::string> AmanPlugIn::getAvailableIds() {
     std::set<std::string> set;
-    for (auto timeline : timelines) {
+    for (auto& timeline : timelines) {
         set.insert(timeline->getIdentifier());
     }
     return set;
@@ -141,6 +143,7 @@ void AmanPlugIn::OnTimer(int Counter) {
 void AmanPlugIn::loadTimelines(const std::string& filename) {
     std::ifstream file(pluginDirectory + "\\" + filename);
     std::string fileContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    std::map<std::string, std::vector<std::shared_ptr<TagItem>>> tagLayouts;
 
     if (fileContent.empty()) {
         DISPLAY_WARNING((filename + ": the JSON-file was not found or is empty").c_str());
@@ -157,6 +160,22 @@ void AmanPlugIn::loadTimelines(const std::string& filename) {
         std::string message = filename + ": error while parsing JSON at position " + std::to_string(offset) + ": '" + fileContent.substr(offset, 10) + "'";
         DISPLAY_WARNING(message.c_str());
         return;
+    }
+
+    if (document.HasMember("tagLayouts") && document["tagLayouts"].IsArray()) {
+        for (auto& tagItemObj : document["tagLayouts"].GetArray()) {
+            auto layoutId = tagItemObj["id"].GetString();
+            std::vector<std::shared_ptr<TagItem>> tagItems;
+            for (auto& tagItemObj : tagItemObj["values"].GetArray()) {
+                auto dataSource = tagItemObj["source"].GetString();
+                auto minWidth = tagItemObj.HasMember("minWidth") ? tagItemObj["minWidth"].GetUint() : 1;
+                auto defaultValue = tagItemObj.HasMember("defaultValue") ? tagItemObj["defaultValue"].GetString() : "";
+                auto alignRight = tagItemObj.HasMember("align") && strcmp(tagItemObj["align"].GetString(), "right") == 0;
+                auto isViaFixIndicator = tagItemObj.HasMember("isViaFixIndicator") && tagItemObj["isViaFixIndicator"].GetBool();
+                tagItems.push_back(std::make_shared<TagItem>(dataSource, defaultValue, minWidth, alignRight, isViaFixIndicator));
+            }
+            tagLayouts[layoutId] = tagItems;
+        }
     }
 
     for (auto& v : document["timelines"].GetArray()) {
@@ -196,7 +215,14 @@ void AmanPlugIn::loadTimelines(const std::string& filename) {
             amanController->setTimelineHorizon(alias, startHorizon);
         }
 
-        timelines.push_back(std::make_shared<AmanTimeline>(targetFixes, viaFixes, destinationAirports, alias));
+        std::vector<std::shared_ptr<TagItem>> tagItems;
+        if (object.HasMember("tagLayout") && object["tagLayout"].IsString()) {
+            tagItems = tagLayouts[object["tagLayout"].GetString()];
+        } else {
+            tagItems = {};
+        }
+
+        timelines.push_back(std::make_shared<AmanTimeline>(targetFixes, viaFixes, destinationAirports, tagItems, alias));
     }
 }
 
