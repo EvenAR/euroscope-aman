@@ -14,6 +14,21 @@ Example `aman-config.json`:
 
 ```json
 {
+    "timelines": {
+        "19R/19L": {
+            "targetFixes": [ "GSW40", "GME40" ],
+            "viaFixes": [ "ADOPI", "LUNIP", "ESEBA", "INREX", "RIPAM", "BELGU" ],
+            "tagLayout": "myLayout",
+            "destinationAirports": [ "ENGM" ]
+        },
+        "...": {
+            "targetFixes": [ "....", "...." ],
+            "viaFixes": [ "..." ],
+            "tagLayout": "simpleLayout",
+            "startHorizon": 60,
+            "destinationAirports": [ "....", "...." ]
+        }
+    },
     "tagLayouts": {
         "myLayout": [
             { "source": "assignedRunway", "width": 4 },
@@ -27,21 +42,11 @@ Example `aman-config.json`:
             { "source": "directRouting", "width": 5, "rightAligned": true, "defaultValue": "-----" },
             { "source": "static", "width": 1 },
             { "source": "scratchPad", "width": 4 }
+        ],
+        "simpleLayout": [
+            { "source": "assignedRunway", "width": 4 },
+            { "source": "callsign", "width": 8 }
         ]
-    },
-    "timelines": {
-        "19R/19L": {
-            "targetFixes": [ "GSW40", "GME40" ],
-            "viaFixes": [ "ADOPI", "LUNIP", "ESEBA", "INREX", "RIPAM", "BELGU" ],
-            "tagLayout": "myLayout",
-            "destinationAirports": [ "ENGM" ]
-        },
-        "...": {
-            "targetFixes": [ "....", "...." ],
-            "viaFixes": [ "..." ],
-            "startHorizon": 60,
-            "destinationAirports": [ "....", "...." ]
-        }
     }
 }
 ```
