@@ -117,6 +117,7 @@ std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixNa
                 ac.eta = timeNow + timeToFix - rt.GetPosition().GetReceivedTime();
                 ac.distLeft = findRemainingDist(rt, route, targetFixIndex);
                 ac.secondsBehindPreceeding = 0; // Updated in the for-loop below
+                ac.scratchPad = rt.GetCorrelatedFlightPlan().GetControllerAssignedData().GetScratchPadString();
                 aircraftList.push_back(ac);
             }
         }
@@ -168,12 +169,12 @@ void AmanPlugIn::loadTimelines(const std::string& filename) {
             std::vector<std::shared_ptr<TagItem>> tagItems;
             for (auto& tagItemObj : itr->value.GetArray()) {
                 auto dataSource = tagItemObj.HasMember("source") ? tagItemObj["source"].GetString() : "";
-                auto minWidth = tagItemObj.HasMember("minWidth") ? tagItemObj["minWidth"].GetUint() : 1;
+                auto width = tagItemObj.HasMember("width") ? tagItemObj["width"].GetUint() : 1;
                 auto defaultValue = tagItemObj.HasMember("defaultValue") ? tagItemObj["defaultValue"].GetString() : "";
                 auto alignRight = tagItemObj.HasMember("rightAligned") && tagItemObj["rightAligned"].GetBool();
                 auto isViaFixIndicator = tagItemObj.HasMember("isViaFixIndicator") && tagItemObj["isViaFixIndicator"].GetBool();
 
-                tagItems.push_back(std::make_shared<TagItem>(dataSource, defaultValue, minWidth, alignRight, isViaFixIndicator));
+                tagItems.push_back(std::make_shared<TagItem>(dataSource, defaultValue, width, alignRight, isViaFixIndicator));
             }
             tagLayouts[layoutId] = tagItems;
         }

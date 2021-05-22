@@ -299,12 +299,18 @@ std::vector<AmanTimelineView::TextSegment> AmanTimelineView::generateLabel(AmanA
         else if (sourceId == "minutesBehindPreceedingRounded") displayValue = timeRelevant ? formatTime(aircraft.secondsBehindPreceeding, true) : "";
         else if (sourceId == "timeBehindPreceeding") displayValue = timeRelevant ? formatTime(aircraft.secondsBehindPreceeding) : "";
         else if (sourceId == "remainingDistance") displayValue = std::to_string(remainingDistance);
-        else if (sourceId == "custom") displayValue = tagItem->getDefaultValue();
         else if (sourceId == "directRouting") displayValue = aircraft.nextFix.size() > 0 ? aircraft.nextFix : tagItem->getDefaultValue();
+        else if (sourceId == "scratchPad") displayValue = aircraft.scratchPad;
+        else if (sourceId == "static") displayValue = tagItem->getDefaultValue();
         else displayValue = "?";
 
+        uint32_t maxWidth = tagItem->getWidth();
+        if (displayValue.length() > maxWidth) {
+            displayValue = displayValue.substr(0, maxWidth - 1) + "…";
+        }
+         
         COLORREF textColor = hasKnownViaFix && tagItem->getIsViaFixIndicator() ? VIA_FIX_COLORS[aircraft.viaFixIndex] : defaultColor;
-        return { tagItem->getMaxWidth(), tagItem->isRightAligned(), textColor, displayValue };
+        return { tagItem->getWidth(), tagItem->isRightAligned(), textColor, displayValue };
     });
     
     return segments;

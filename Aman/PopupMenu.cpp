@@ -69,13 +69,13 @@ CRect PopupMenu::renderMenuItem(HDC hdc, const std::string& text, CRect area, in
     bool isActive = std::find(activeItems.begin(), activeItems.end(), text) != activeItems.end();
     auto label = (isActive ? "x " : "  ") + text;
 
-    int minWidth = area.Width();
+    int width = area.Width();
     bool isHovered = index == lastHoveredIndex;
 
     auto oldBkMode = SetBkMode(hdc, isHovered ? OPAQUE : TRANSPARENT);
 
     DrawText(hdc, label.c_str(), label.length(), &area, DT_LEFT | DT_CALCRECT);
-    area.right = area.left + minWidth;
+    area.right = area.left + width;
     DrawText(hdc, label.c_str(), label.length(), &area, DT_LEFT);
     clickAreas[index] = { area };
 

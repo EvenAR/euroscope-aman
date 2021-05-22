@@ -9,6 +9,7 @@ public:
     std::string arrivalRunway;
     std::string icaoType;
     std::string nextFix;
+    std::string scratchPad;
 
     int viaFixIndex;
 

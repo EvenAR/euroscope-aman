@@ -1,14 +1,17 @@
 {
     "tagLayouts": {
         "myLayout": [
-            { "source": "assignedRunway", "minWidth": 4 },
-            { "source": "callsign", "minWidth": 8 },
-            { "source": "custom", "defaultValue": "*", "minWidth": 2, "isViaFixIndicator": true },
-            { "source": "aircraftType", "minWidth": 5 },
-            { "source": "aircraftWtc", "minWidth": 2 },
-            { "source": "timeBehindPreceeding", "minWidth": 5, "align": "right" },
-            { "source": "remainingDistance", "minWidth": 4, "align": "right" },
-            { "source": "directRouting", "minWidth": 6, "align": "right", "defaultValue": "-----" }
+            { "source": "assignedRunway", "width": 4 },
+            { "source": "callsign", "width": 8 },
+            { "source": "static", "defaultValue": "*", "width": 2, "isViaFixIndicator": true },
+            { "source": "aircraftType", "width": 5 },
+            { "source": "aircraftWtc", "width": 2 },
+            { "source": "timeBehindPreceeding", "width": 5, "rightAligned": true },
+            { "source": "remainingDistance", "width": 4, "rightAligned": true },
+            { "source": "static", "width": 1 },
+            { "source": "directRouting", "width": 5, "rightAligned": true, "defaultValue": "-----" },
+            { "source": "static", "width": 1 },
+            { "source": "scratchPad", "width": 4 }
         ]
     },
     "timelines": {

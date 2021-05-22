@@ -16,14 +16,17 @@ Example `aman-config.json`:
 {
     "tagLayouts": {
         "myLayout": [
-            { "source": "assignedRunway", "minWidth": 4 },
-            { "source": "callsign", "minWidth": 8 },
-            { "source": "custom", "defaultValue": "*", "minWidth": 2, "isViaFixIndicator": true },
-            { "source": "aircraftType", "minWidth": 5 },
-            { "source": "aircraftWtc", "minWidth": 2 },
-            { "source": "timeBehindPreceeding", "minWidth": 5, "align": "right" },
-            { "source": "remainingDistance", "minWidth": 4, "align": "right" },
-            { "source": "directRouting", "minWidth": 6, "align": "right", "defaultValue": "-----" }
+            { "source": "assignedRunway", "width": 4 },
+            { "source": "callsign", "width": 8 },
+            { "source": "static", "defaultValue": "*", "width": 2, "isViaFixIndicator": true },
+            { "source": "aircraftType", "width": 5 },
+            { "source": "aircraftWtc", "width": 2 },
+            { "source": "timeBehindPreceeding", "width": 5, "rightAligned": true },
+            { "source": "remainingDistance", "width": 4, "rightAligned": true },
+            { "source": "static", "width": 1 },
+            { "source": "directRouting", "width": 5, "rightAligned": true, "defaultValue": "-----" },
+            { "source": "static", "width": 1 },
+            { "source": "scratchPad", "width": 4 }
         ]
     },
     "timelines": {
@@ -52,11 +55,11 @@ A tag layout has a set of tag values, which will be drawn in the listed order. E
 
 | Property            | Description
 |---------------------|---------------
-| `source`            | Where to get the value from. The following sources are available: `callsign`, `assignedRunway`, `aircraftType`, `aircraftWtc`, `minutesBehindPreceedingRounded`, `timeBehindPreceeding`, `remainingDistance`, `directRouting`, `custom`.
-| `minWidth`          | The number of characters that the value should "reserve". The number should be at least the longest output you expect (eg. for `aircraftType` use `4` or greater).
+| `source`            | Where to get the value from. The following sources are available: `callsign`, `assignedRunway`, `aircraftType`, `aircraftWtc`, `minutesBehindPreceedingRounded`, `timeBehindPreceeding`, `remainingDistance`, `directRouting`, `scratchPad`, `static`.
+| `width`             | The number of characters that the value should "reserve". If the value is longer than `width` it will be truncated.
 | `rightAligned`      | (optional) Defaults to `false`.
 | `isViaFixIndicator` | (optional) If true, the value will be colored based on the "via fix". Defaults to `false`.
-| `defaultValue`      | (optional) Can only be used if `source` is `directRouting` or `custom`. Defaults to `""`.
+| `defaultValue`      | (optional) Can only be used if `source` is `directRouting` or `static`. Defaults to `""`.
 
 
 ![Window](https://i.gyazo.com/52cf2fbc1d6eb48f4a77b71784e7c61f.png)

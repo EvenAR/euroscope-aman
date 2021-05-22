@@ -21,7 +21,7 @@ AmanTimeline::AmanTimeline(
     this->tagItems = tagItems;
     this->alias = alias;
 
-    auto addWidth = [](uint32_t acc, std::shared_ptr<TagItem> tagItem) { return acc + tagItem->getMaxWidth(); };
+    auto addWidth = [](uint32_t acc, std::shared_ptr<TagItem> tagItem) { return acc + tagItem->getWidth(); };
     this->width = std::accumulate(tagItems.begin(), tagItems.end(), 0, addWidth);
 }
 
