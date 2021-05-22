@@ -28,7 +28,7 @@
         str.pop_back();
 #define DISPLAY_WARNING(str) DisplayUserMessage("Aman", "Warning", str, true, true, true, true, false);
 
-AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE, "Arrival Manager", "2.1.0", "https://git.io/Jt3S8", "Open source") {
+AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE, "Arrival Manager", "3.0.0", "https://git.io/Jt3S8", "Open source") {
     // Find directory of this .dll
     char fullPluginPath[_MAX_PATH];
     GetModuleFileNameA((HINSTANCE)&__ImageBase, fullPluginPath, sizeof(fullPluginPath));
@@ -162,67 +162,61 @@ void AmanPlugIn::loadTimelines(const std::string& filename) {
         return;
     }
 
-    if (document.HasMember("tagLayouts") && document["tagLayouts"].IsArray()) {
-        for (auto& tagItemObj : document["tagLayouts"].GetArray()) {
-            auto layoutId = tagItemObj["id"].GetString();
+    if (document.HasMember("tagLayouts") && document["tagLayouts"].IsObject()) {
+        for (auto itr = document["tagLayouts"].MemberBegin(); itr != document["tagLayouts"].MemberEnd(); ++itr) {
+            auto layoutId = itr->name.GetString();
             std::vector<std::shared_ptr<TagItem>> tagItems;
-            for (auto& tagItemObj : tagItemObj["values"].GetArray()) {
-                auto dataSource = tagItemObj["source"].GetString();
+            for (auto& tagItemObj : itr->value.GetArray()) {
+                auto dataSource = tagItemObj.HasMember("source") ? tagItemObj["source"].GetString() : "";
                 auto minWidth = tagItemObj.HasMember("minWidth") ? tagItemObj["minWidth"].GetUint() : 1;
                 auto defaultValue = tagItemObj.HasMember("defaultValue") ? tagItemObj["defaultValue"].GetString() : "";
-                auto alignRight = tagItemObj.HasMember("align") && strcmp(tagItemObj["align"].GetString(), "right") == 0;
+                auto alignRight = tagItemObj.HasMember("rightAligned") && tagItemObj["rightAligned"].GetBool();
                 auto isViaFixIndicator = tagItemObj.HasMember("isViaFixIndicator") && tagItemObj["isViaFixIndicator"].GetBool();
+
                 tagItems.push_back(std::make_shared<TagItem>(dataSource, defaultValue, minWidth, alignRight, isViaFixIndicator));
             }
             tagLayouts[layoutId] = tagItems;
         }
     }
 
-    for (auto& v : document["timelines"].GetArray()) {
-        auto object = v.GetObjectA();
+    if (document.HasMember("timelines") && document["timelines"].IsObject()) {
+        for (auto itr = document["timelines"].MemberBegin(); itr != document["timelines"].MemberEnd(); ++itr) {
+            auto object = itr->value.GetObjectA();
 
-        std::vector<std::string> targetFixes;
-        for (auto& fix : object["targetFixes"].GetArray()) {
-            targetFixes.push_back(fix.GetString());
-        }
-
-        std::vector<std::string> viaFixes;
-        if (object.HasMember("viaFixes") && object["viaFixes"].IsArray()) {
-            for (auto& fix : object["viaFixes"].GetArray()) {
-                viaFixes.push_back(fix.GetString());
+            std::vector<std::string> targetFixes;
+            for (auto& fix : object["targetFixes"].GetArray()) {
+                targetFixes.push_back(fix.GetString());
             }
-        }
 
-        std::vector<std::string> destinationAirports;
-        if (object.HasMember("destinationAirports") && object["destinationAirports"].IsArray()) {
-            for (auto& destination : object["destinationAirports"].GetArray()) {
-                destinationAirports.push_back(destination.GetString());
+            std::vector<std::string> viaFixes;
+            if (object.HasMember("viaFixes") && object["viaFixes"].IsArray()) {
+                for (auto& fix : object["viaFixes"].GetArray()) {
+                    viaFixes.push_back(fix.GetString());
+                }
             }
-        }
 
-        std::string alias;
-        if (object.HasMember("alias") && object["alias"].IsString()) {
-            alias = object["alias"].GetString();
-        } else {
-            alias = "";
-            for (const auto& piece : targetFixes) alias += piece + "/";
-            alias = alias.substr(0, alias.size() - 1);
-        }
+            std::vector<std::string> destinationAirports;
+            if (object.HasMember("destinationAirports") && object["destinationAirports"].IsArray()) {
+                for (auto& destination : object["destinationAirports"].GetArray()) {
+                    destinationAirports.push_back(destination.GetString());
+                }
+            }
 
-        uint32_t startHorizon;
-        if (object.HasMember("startHorizon") && object["startHorizon"].IsUint()) {
-            startHorizon = object["startHorizon"].GetUint();
-            amanController->setTimelineHorizon(alias, startHorizon);
-        }
+            uint32_t startHorizon;
+            if (object.HasMember("startHorizon") && object["startHorizon"].IsUint()) {
+                startHorizon = object["startHorizon"].GetUint();
+                amanController->setTimelineHorizon(itr->name.GetString(), startHorizon);
+            }
 
-        std::vector<std::shared_ptr<TagItem>> tagItems;
-        if (object.HasMember("tagLayout") && object["tagLayout"].IsString()) {
-            tagItems = tagLayouts[object["tagLayout"].GetString()];
-        } else {
-            tagItems = {};
-        }
+            std::vector<std::shared_ptr<TagItem>> tagItems;
+            if (object.HasMember("tagLayout") && object["tagLayout"].IsString()) {
+                tagItems = tagLayouts[object["tagLayout"].GetString()];
+            } else {
+                tagItems = {};
+            }
 
-        timelines.push_back(std::make_shared<AmanTimeline>(targetFixes, viaFixes, destinationAirports, tagItems, alias));
+            timelines.push_back(std::make_shared<AmanTimeline>(targetFixes, viaFixes, destinationAirports, tagItems, itr->name.GetString()));
+        }
     }
 }
 

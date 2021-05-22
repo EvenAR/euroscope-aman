@@ -1,41 +1,21 @@
 {
-    "tagLayouts": [
-        { 
-            "id": "1", "values": [
-                { "source": "assignedRunway", "minWidth": 4 },
-                { "source": "callsign", "minWidth": 8 },
-                { "source": "custom", "defaultValue": "*", "minWidth": 2, "isViaFixIndicator": true },
-                { "source": "aircraftType", "minWidth": 5 },
-                { "source": "aircraftWtc", "minWidth": 2 },
-                { "source": "timeBehindPreceeding", "minWidth": 5, "align": "right" },
-                { "source": "remainingDistance", "minWidth": 4, "align": "right" },
-                { "source": "directRouting", "minWidth": 6, "align": "right", "defaultValue": "-----" }
-            ]
-        },
-        { 
-            "id": "2", "values": [
-                { "source": "callsign", "minWidth": 8 }
-            ]
-        }
-    ],
-    "timelines": [
-		{
-            "alias": "19/19R",
+    "tagLayouts": {
+        "myLayout": [
+            { "source": "assignedRunway", "minWidth": 4 },
+            { "source": "callsign", "minWidth": 8 },
+            { "source": "custom", "defaultValue": "*", "minWidth": 2, "isViaFixIndicator": true },
+            { "source": "aircraftType", "minWidth": 5 },
+            { "source": "aircraftWtc", "minWidth": 2 },
+            { "source": "timeBehindPreceeding", "minWidth": 5, "align": "right" },
+            { "source": "remainingDistance", "minWidth": 4, "align": "right" },
+            { "source": "directRouting", "minWidth": 6, "align": "right", "defaultValue": "-----" }
+        ]
+    },
+    "timelines": {
+        "19R/19L": {
             "targetFixes": [ "GSW40", "GME40" ],
             "viaFixes": [ "ADOPI", "LUNIP", "ESEBA", "INREX", "RIPAM", "BELGU" ],
-            "tagLayout": "1"
-        },
-        {
-            "alias": "HEHE",
-            "targetFixes": [ "GSW40", "GME40" ],
-            "viaFixes": [ "ADOPI", "LUNIP", "ESEBA", "INREX", "RIPAM", "BELGU" ],
-            "tagLayout": "1"
-        },
-        {
-            "alias": "HEHE2",
-            "targetFixes": [ "GME40" ],
-            "viaFixes": [ "ADOPI", "LUNIP", "ESEBA", "INREX", "RIPAM", "BELGU" ],
-            "tagLayout": "2"
+            "tagLayout": "myLayout"
         }
-    ]
+    }
 }
