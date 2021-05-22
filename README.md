@@ -33,7 +33,14 @@ Example `aman-config.json`:
         "19R/19L": {
             "targetFixes": [ "GSW40", "GME40" ],
             "viaFixes": [ "ADOPI", "LUNIP", "ESEBA", "INREX", "RIPAM", "BELGU" ],
-            "tagLayout": "myLayout"
+            "tagLayout": "myLayout",
+            "destinationAirports": [ "ENGM" ]
+        },
+        "...": {
+            "targetFixes": [ "....", "...." ],
+            "viaFixes": [ "..." ],
+            "startHorizon": 60,
+            "destinationAirports": [ "....", "...." ]
         }
     }
 }
@@ -51,7 +58,7 @@ Example `aman-config.json`:
 
 ### Tag layouts
 
-A tag layout has a set of tag values, which will be drawn in the listed order. Each tag value is configured using the following properties:
+A tag layout has a set of tag values, which will be drawn in the specified order. Each tag value is configured using the following properties:
 
 | Property            | Description
 |---------------------|---------------
