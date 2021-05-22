@@ -6,7 +6,6 @@
 
 AmanController::AmanController(AmanPlugIn* plugin) {
     this->amanModel = plugin;
-    this->amanWindow = std::make_shared<AmanWindow>(this);
 }
 
 AmanController::~AmanController() {}
@@ -21,9 +20,7 @@ void AmanController::modelUpdated() {
 }
 
 void AmanController::toggleTimeline(const std::string& id) {
-    bool isActive = std::find(activeTimelines.begin(), activeTimelines.end(), id) != activeTimelines.end();
-
-    if (isActive) {
+    if (isTimelineActive(id)) {
         activeTimelines.erase(
             std::remove(activeTimelines.begin(), activeTimelines.end(), id),
             activeTimelines.end()
@@ -32,6 +29,10 @@ void AmanController::toggleTimeline(const std::string& id) {
         activeTimelines.push_back(id);
     }
     modelUpdated();
+}
+
+bool AmanController::isTimelineActive(const std::string& id) {
+    return std::find(activeTimelines.begin(), activeTimelines.end(), id) != activeTimelines.end();
 }
 
 void AmanController::reloadProfiles() {

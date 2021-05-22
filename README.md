@@ -14,6 +14,7 @@ Example `aman-config.json`:
 
 ```json
 {
+    "openAutomatically": false,
     "timelines": {
         "19R/19L": {
             "targetFixes": [ "GSW40", "GME40" ],

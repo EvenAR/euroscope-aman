@@ -34,15 +34,13 @@ AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE, "Arrival Manager", "3.0.0
     GetModuleFileNameA((HINSTANCE)&__ImageBase, fullPluginPath, sizeof(fullPluginPath));
     std::string fullPluginPathStr(fullPluginPath);
     pluginDirectory = fullPluginPathStr.substr(0, fullPluginPathStr.find_last_of("\\"));
-
     amanController = std::make_shared<AmanController>(this);
-
     loadTimelines("aman-config.json");
-
     amanController->modelUpdated();
 }
 
 AmanPlugIn::~AmanPlugIn() { 
+    
 }
 
 std::set<std::string> AmanPlugIn::getAvailableIds() {
@@ -229,8 +227,17 @@ void AmanPlugIn::loadTimelines(const std::string& filename) {
         }
     }
 
+    auto makeSureWindowIsOpen = document.HasMember("openAutomatically") ? document["openAutomatically"].GetBool() : true;
+    if (makeSureWindowIsOpen) {
+        this->amanController->openWindow();
+    }
+
+    // If only one timeline, open it automatically:
     if (timelines.size() == 1) {
-        this->amanController->toggleTimeline(timelines.at(0)->getIdentifier());
+        auto onlyTimelineId = timelines.at(0)->getIdentifier();
+        if (!this->amanController->isTimelineActive(onlyTimelineId)) {
+            this->amanController->toggleTimeline(onlyTimelineId);
+        }
     }
 }
 

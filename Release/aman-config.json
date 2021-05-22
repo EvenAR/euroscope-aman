@@ -1,4 +1,12 @@
 {
+    "openAutomatically": false,
+    "timelines": {
+        "19R/19L": {
+            "targetFixes": [ "GSW40", "GME40" ],
+            "viaFixes": [ "ADOPI", "LUNIP", "ESEBA", "INREX", "RIPAM", "BELGU" ],
+            "tagLayout": "myLayout"
+        }
+    },
     "tagLayouts": {
         "myLayout": [
             { "source": "assignedRunway", "width": 4 },
@@ -12,13 +20,10 @@
             { "source": "directRouting", "width": 5, "rightAligned": true, "defaultValue": "-----" },
             { "source": "static", "width": 1 },
             { "source": "scratchPad", "width": 4 }
+        ],
+        "simpleLayout": [
+            { "source": "assignedRunway", "width": 4, "isViaFixIndicator": true },
+            { "source": "callsign", "width": 8 }
         ]
-    },
-    "timelines": {
-        "19R/19L": {
-            "targetFixes": [ "GSW40", "GME40" ],
-            "viaFixes": [ "ADOPI", "LUNIP", "ESEBA", "INREX", "RIPAM", "BELGU" ],
-            "tagLayout": "myLayout"
-        }
     }
 }
