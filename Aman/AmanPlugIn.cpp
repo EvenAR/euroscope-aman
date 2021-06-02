@@ -217,14 +217,14 @@ void AmanPlugIn::loadTimelines(const std::string& filename) {
                 tagItems = {};
             }
 
-            uint32_t startHorizon;
-            if (object.HasMember("startHorizon") && object["startHorizon"].IsUint()) {
-                startHorizon = object["startHorizon"].GetUint();
+            uint32_t defaultTimeSpan;
+            if (object.HasMember("defaultTimeSpan") && object["defaultTimeSpan"].IsUint()) {
+                defaultTimeSpan = object["defaultTimeSpan"].GetUint();
             } else {
-                startHorizon = 30;
+                defaultTimeSpan = 30;
             }
 
-            timelines.push_back(std::make_shared<AmanTimeline>(targetFixes, viaFixes, destinationAirports, tagItems, property->name.GetString(), startHorizon));
+            timelines.push_back(std::make_shared<AmanTimeline>(targetFixes, viaFixes, destinationAirports, tagItems, property->name.GetString(), defaultTimeSpan));
         }
     }
 
@@ -292,8 +292,8 @@ std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> AmanPlugIn::getTimel
 
                 pAircraftList->clear();
                 for each (auto finalFix in fixes) {
-                    auto var = getInboundsForFix(finalFix, viaFixes, timeline->getDestinationAirports());
-                    pAircraftList->insert(pAircraftList->end(), var.begin(), var.end());
+                    auto inbounds = getInboundsForFix(finalFix, viaFixes, timeline->getDestinationAirports());
+                    pAircraftList->insert(pAircraftList->end(), inbounds.begin(), inbounds.end());
                 }
 
                 result->push_back(timeline);

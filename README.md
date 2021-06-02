@@ -26,7 +26,7 @@ Example `aman-config.json`:
             "targetFixes": [ "....", "...." ],
             "viaFixes": [ "..." ],
             "tagLayout": "simpleLayout",
-            "startHorizon": 60,
+            "defaultTimeSpan": 60,
             "destinationAirports": [ "....", "...." ]
         }
     },
@@ -59,7 +59,7 @@ Example `aman-config.json`:
 | `targetFixes`    | Based on the assigned route, any aircraft expected to pass one of these fixes are shown in the timeline. When exactly two fixes are specified, a dual timeline is shown with the first fix on the left side and the second on the right side.
 | `tagLayout`      | The id of the tag-layout that should be used for this timeline.
 | `viaFixes`       | (optional) Each fix will be assigned a color, and aircraft with a route initially (any direct routings ignored) going through one of these fixes will be marked with the color. For example, this can give a better overview of which direction each aircraft is coming from. Only eight different colors are available at the moment.
-| `startHorizon`   | (optional) If used, this will be the initial time horizon (in minutes) when the timeline is loaded.
+| `defaultTimeSpan`| (optional) If used, this will be the initial "zoom"-level (in minutes) when the timeline is loaded.
 | `destinationAirports` | (optional) If used, aircraft whose destination is not in `destinationAirports` will not be included.
 
 ### Tag layouts

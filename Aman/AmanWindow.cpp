@@ -10,8 +10,8 @@
 #include <algorithm> 
 
 // In minutes:
-#define MAX_HORIZON 240
-#define MIN_HORIZON 5
+#define MAX_TIME_SPAN 240
+#define MIN_TIME_SPAN 5
 
 #define TIMELINES_RELOAD "[Reload config] "
 
@@ -100,7 +100,7 @@ uint32_t AmanWindow::getZoomLevel(const std::shared_ptr<AmanTimeline>& timeline)
     if (this->zoomLevels.count(id)) {
         return this->zoomLevels[id];
     } else {
-        return min(timeline->getDefaultZoom(), MAX_HORIZON);
+        return min(timeline->getDefaultTimeSpan(), MAX_TIME_SPAN);
     }
 }
 
@@ -175,7 +175,7 @@ void AmanWindow::mouseWheelSrolled(CPoint cursorPosClient, short delta) {
     if (timelinePointedAt) {
         auto currentRange = getZoomLevel(timelinePointedAt);
         auto newRange = currentRange - delta / 60;
-        auto limitReached = newRange < MIN_HORIZON || newRange > MAX_HORIZON;
+        auto limitReached = newRange < MIN_TIME_SPAN || newRange > MAX_TIME_SPAN;
 
         if (!limitReached) {
             this->zoomLevels[timelinePointedAt->getIdentifier()] = newRange;
