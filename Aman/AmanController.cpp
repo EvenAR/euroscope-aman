@@ -39,10 +39,6 @@ void AmanController::reloadProfiles() {
     this->amanModel->requestReload();
 }
 
-void AmanController::setTimelineHorizon(const std::string& id, uint32_t minutes) {
-    this->amanWindow->setTimelineHorizon(id, minutes);
-}
-
 bool AmanController::openWindow() {
     if (this->amanWindow == nullptr) {
         this->amanWindow = std::make_shared<AmanWindow>(this);

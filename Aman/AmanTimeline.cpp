@@ -13,13 +13,15 @@ AmanTimeline::AmanTimeline(
                 std::vector<std::string> viaFixes, 
                 std::vector<std::string> destinations, 
                 std::vector<std::shared_ptr<TagItem>> tagItems, 
-                const std::string& alias) {
+                const std::string& alias,
+                uint32_t defaultZoom) {
     this->fixes = fixes;
     this->viaFixes = viaFixes;
     this->aircraftList = std::vector<AmanAircraft>();
     this->destinationAirports = destinations;
     this->tagItems = tagItems;
     this->alias = alias;
+    this->defaultZoom = defaultZoom;
 
     auto addWidth = [](uint32_t acc, std::shared_ptr<TagItem> tagItem) { return acc + tagItem->getWidth(); };
     this->width = std::accumulate(tagItems.begin(), tagItems.end(), 0, addWidth);

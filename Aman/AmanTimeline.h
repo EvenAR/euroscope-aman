@@ -13,7 +13,8 @@ public:
         std::vector<std::string> viaFixes, 
         std::vector<std::string> destinationAirports, 
         std::vector<std::shared_ptr<TagItem>> tagItems,
-        const std::string& alias
+        const std::string& alias,
+        uint32_t defaultZoom
     );
 
     std::string getIdentifier();
@@ -27,6 +28,7 @@ public:
     std::vector<std::string> getDestinationAirports() { return destinationAirports; }
     std::vector<std::shared_ptr<TagItem>> getTagItems() { return tagItems; }
     uint32_t getWidth() { return width; }
+    uint32_t getDefaultZoom() { return defaultZoom; }
 
     ~AmanTimeline();
 
@@ -38,5 +40,6 @@ private:
     std::vector<std::string> destinationAirports;
     std::vector<std::shared_ptr<TagItem>> tagItems;
     uint32_t width;
+    uint32_t defaultZoom;
 };
 

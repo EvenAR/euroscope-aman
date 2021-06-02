@@ -12,7 +12,6 @@
 // In minutes:
 #define MAX_HORIZON 240
 #define MIN_HORIZON 5
-#define DEFAULT_HORIZON 30
 
 #define TIMELINES_RELOAD "[Reload config] "
 
@@ -21,9 +20,10 @@ AmanWindow::AmanWindow(AmanController* controller) : Window("AmanWindow", "AMAN"
     this->titleBar = std::make_shared<TitleBar>();
     this->menuBar = std::make_shared<MenuBar>();
 
-    static auto onSelection = [controller](const std::string& timelineId) {
+    static auto onSelection = [controller, this](const std::string& timelineId) {
         if (timelineId == TIMELINES_RELOAD) {
             controller->reloadProfiles();
+            this->zoomLevels.clear();
         } else {
             controller->toggleTimeline(timelineId);
         }
@@ -79,7 +79,7 @@ void AmanWindow::drawContent(HDC hdc, CRect clientRect) {
     renderTimelinesMutex.lock();
     if (timelinesToRender != nullptr) {
         for (auto& timeline : *timelinesToRender) {
-            auto zoomSec = getZoomLevel(timeline->getIdentifier()) * 60;
+            auto zoomSec = getZoomLevel(timeline) * 60;
             previousTimelineArea = AmanTimelineView::render(hdc, timeline, timelineView, zoomSec, previousTimelineArea.right);
             timelineIds.push_back(timeline->getIdentifier());
         }
@@ -94,11 +94,13 @@ void AmanWindow::drawContent(HDC hdc, CRect clientRect) {
     this->menuBar->render(hdc, titleBarRect);
 }
 
-uint32_t AmanWindow::getZoomLevel(const std::string& id) {
+uint32_t AmanWindow::getZoomLevel(const std::shared_ptr<AmanTimeline>& timeline) {
+    auto &id = timeline->getIdentifier();
+
     if (this->zoomLevels.count(id)) {
         return this->zoomLevels[id];
     } else {
-        return DEFAULT_HORIZON; 
+        return min(timeline->getDefaultZoom(), MAX_HORIZON);
     }
 }
 
@@ -171,13 +173,12 @@ void AmanWindow::mouseWheelSrolled(CPoint cursorPosClient, short delta) {
     auto timelinePointedAt = getTimelineAt(timelinesToRender, cursorPosClient);
 
     if (timelinePointedAt) {
-        std::string id = timelinePointedAt->getIdentifier();
-        auto currentRange = getZoomLevel(id);
+        auto currentRange = getZoomLevel(timelinePointedAt);
         auto newRange = currentRange - delta / 60;
         auto limitReached = newRange < MIN_HORIZON || newRange > MAX_HORIZON;
 
         if (!limitReached) {
-            this->zoomLevels[id] = newRange;
+            this->zoomLevels[timelinePointedAt->getIdentifier()] = newRange;
             requestRepaint();
         }
     }
@@ -185,10 +186,6 @@ void AmanWindow::mouseWheelSrolled(CPoint cursorPosClient, short delta) {
 
 void AmanWindow::closeRequested() {
     controller->closeWindow();
-}
-
-void AmanWindow::setTimelineHorizon(const std::string& id, uint32_t minutes) {
-    this->zoomLevels[id] = min(minutes, MAX_HORIZON);
 }
 
 void AmanWindow::windowClosed() {

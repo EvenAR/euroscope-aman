@@ -171,10 +171,10 @@ void AmanPlugIn::loadTimelines(const std::string& filename) {
     }
 
     if (document.HasMember("tagLayouts") && document["tagLayouts"].IsObject()) {
-        for (auto itr = document["tagLayouts"].MemberBegin(); itr != document["tagLayouts"].MemberEnd(); ++itr) {
-            auto layoutId = itr->name.GetString();
+        for (auto property = document["tagLayouts"].MemberBegin(); property != document["tagLayouts"].MemberEnd(); ++property) {
+            auto layoutId = property->name.GetString();
             std::vector<std::shared_ptr<TagItem>> tagItems;
-            for (auto& tagItemObj : itr->value.GetArray()) {
+            for (auto& tagItemObj : property->value.GetArray()) {
                 auto dataSource = tagItemObj.HasMember("source") ? tagItemObj["source"].GetString() : "";
                 auto width = tagItemObj.HasMember("width") ? tagItemObj["width"].GetUint() : 1;
                 auto defaultValue = tagItemObj.HasMember("defaultValue") ? tagItemObj["defaultValue"].GetString() : "";
@@ -188,8 +188,8 @@ void AmanPlugIn::loadTimelines(const std::string& filename) {
     }
 
     if (document.HasMember("timelines") && document["timelines"].IsObject()) {
-        for (auto itr = document["timelines"].MemberBegin(); itr != document["timelines"].MemberEnd(); ++itr) {
-            auto object = itr->value.GetObjectA();
+        for (auto property = document["timelines"].MemberBegin(); property != document["timelines"].MemberEnd(); ++property) {
+            auto object = property->value.GetObjectA();
 
             std::vector<std::string> targetFixes;
             for (auto& fix : object["targetFixes"].GetArray()) {
@@ -210,12 +210,6 @@ void AmanPlugIn::loadTimelines(const std::string& filename) {
                 }
             }
 
-            uint32_t startHorizon;
-            if (object.HasMember("startHorizon") && object["startHorizon"].IsUint()) {
-                startHorizon = object["startHorizon"].GetUint();
-                amanController->setTimelineHorizon(itr->name.GetString(), startHorizon);
-            }
-
             std::vector<std::shared_ptr<TagItem>> tagItems;
             if (object.HasMember("tagLayout") && object["tagLayout"].IsString()) {
                 tagItems = tagLayouts[object["tagLayout"].GetString()];
@@ -223,7 +217,14 @@ void AmanPlugIn::loadTimelines(const std::string& filename) {
                 tagItems = {};
             }
 
-            timelines.push_back(std::make_shared<AmanTimeline>(targetFixes, viaFixes, destinationAirports, tagItems, itr->name.GetString()));
+            uint32_t startHorizon;
+            if (object.HasMember("startHorizon") && object["startHorizon"].IsUint()) {
+                startHorizon = object["startHorizon"].GetUint();
+            } else {
+                startHorizon = 30;
+            }
+
+            timelines.push_back(std::make_shared<AmanTimeline>(targetFixes, viaFixes, destinationAirports, tagItems, property->name.GetString(), startHorizon));
         }
     }
 
