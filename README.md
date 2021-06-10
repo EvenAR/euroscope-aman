@@ -33,7 +33,7 @@ Example `aman-config.json`:
         "myLayout": [
             { "source": "assignedRunway", "width": 4 },
             { "source": "callsign", "width": 8 },
-            { "source": "static", "defaultValue": "*", "width": 2, "isViaFixIndicator": true },
+            { "source": "static", "defaultValue": "¤", "width": 2, "isViaFixIndicator": true },
             { "source": "aircraftType", "width": 5 },
             { "source": "aircraftWtc", "width": 2 },
             { "source": "timeBehindPreceeding", "width": 5, "rightAligned": true },
@@ -50,6 +50,8 @@ Example `aman-config.json`:
     }
 }
 ```
+
+Note: the AMAN Window uses the EuroScope font which is based on [ANSI/Windows-1252 character encoding](http://www.alanwood.net/demos/ansi.html). If you want to use special symbols like ¶, ¤, •, |, ©, ®, ¬, ‡ or º in your "static" tag fields you must save the JSON-file using that encoding (select "ANSI" encoding in notepad). Also note that some of these symbols have a custom representation in the EuroScope font - like ¶ which is displayed as a telephone, and ¤ which is a filled rectangle.
 
 ### Timelines
 
