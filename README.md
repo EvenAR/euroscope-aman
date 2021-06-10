@@ -3,8 +3,7 @@ A simple arrival manager plugin for EuroScope. Uses the position predictions pro
 
 ## Download
 
-The plugin .dll-file can be found in the Release folder. [Direct link](https://github.com/EvenAR/euroscope-aman/raw/master/Release/Aman.dll).
-The AMAN-display will appear in a separate window once the plugin has been loaded. 
+The plugin .dll-file can be found under [Releases](https://github.com/EvenAR/euroscope-aman/releases). The AMAN-display will appear in a separate window once the plugin has been loaded.
 
 ## Configuration
 
