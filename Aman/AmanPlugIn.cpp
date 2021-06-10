@@ -5,6 +5,7 @@
 #include "AmanPlugIn.h"
 #include "AmanTimeline.h"
 #include "AmanWindow.h"
+#include "AmanTagItem.h"
 #include "stdafx.h"
 #include "windows.h"
 #include "rapidjson/document.h"
@@ -17,6 +18,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <map>
 
 #define TO_UPPERCASE(str) std::transform(str.begin(), str.end(), str.begin(), ::toupper);
 #define REMOVE_EMPTY(strVec, output)                                                                                   \
@@ -26,26 +28,24 @@
         str.pop_back();
 #define DISPLAY_WARNING(str) DisplayUserMessage("Aman", "Warning", str, true, true, true, true, false);
 
-AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE, "Arrival Manager", "2.1.0", "https://git.io/Jt3S8", "Open source") {
+AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE, "Arrival Manager", "3.0.1", "https://git.io/Jt3S8", "Open source") {
     // Find directory of this .dll
     char fullPluginPath[_MAX_PATH];
     GetModuleFileNameA((HINSTANCE)&__ImageBase, fullPluginPath, sizeof(fullPluginPath));
     std::string fullPluginPathStr(fullPluginPath);
     pluginDirectory = fullPluginPathStr.substr(0, fullPluginPathStr.find_last_of("\\"));
-
     amanController = std::make_shared<AmanController>(this);
-
     loadTimelines("aman-config.json");
-
     amanController->modelUpdated();
 }
 
 AmanPlugIn::~AmanPlugIn() { 
+    
 }
 
 std::set<std::string> AmanPlugIn::getAvailableIds() {
     std::set<std::string> set;
-    for (auto timeline : timelines) {
+    for (auto& timeline : timelines) {
         set.insert(timeline->getIdentifier());
     }
     return set;
@@ -115,6 +115,7 @@ std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixNa
                 ac.eta = timeNow + timeToFix - rt.GetPosition().GetReceivedTime();
                 ac.distLeft = findRemainingDist(rt, route, targetFixIndex);
                 ac.secondsBehindPreceeding = 0; // Updated in the for-loop below
+                ac.scratchPad = rt.GetCorrelatedFlightPlan().GetControllerAssignedData().GetScratchPadString();
                 aircraftList.push_back(ac);
             }
         }
@@ -138,9 +139,19 @@ void AmanPlugIn::OnTimer(int Counter) {
     amanController->modelUpdated();
 }
 
+bool AmanPlugIn::OnCompileCommand(const char* sCommandLine) {
+    if (strcmp(sCommandLine, ".aman open") == 0) {
+        return this->amanController->openWindow();
+    } else if (strcmp(sCommandLine, ".aman close") == 0) {
+        return this->amanController->closeWindow();
+    }
+    return false;
+}
+
 void AmanPlugIn::loadTimelines(const std::string& filename) {
     std::ifstream file(pluginDirectory + "\\" + filename);
     std::string fileContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    std::map<std::string, std::vector<std::shared_ptr<TagItem>>> tagLayouts;
 
     if (fileContent.empty()) {
         DISPLAY_WARNING((filename + ": the JSON-file was not found or is empty").c_str());
@@ -159,44 +170,75 @@ void AmanPlugIn::loadTimelines(const std::string& filename) {
         return;
     }
 
-    for (auto& v : document["timelines"].GetArray()) {
-        auto object = v.GetObjectA();
+    if (document.HasMember("tagLayouts") && document["tagLayouts"].IsObject()) {
+        for (auto property = document["tagLayouts"].MemberBegin(); property != document["tagLayouts"].MemberEnd(); ++property) {
+            auto layoutId = property->name.GetString();
+            std::vector<std::shared_ptr<TagItem>> tagItems;
+            for (auto& tagItemObj : property->value.GetArray()) {
+                auto dataSource = tagItemObj.HasMember("source") ? tagItemObj["source"].GetString() : "";
+                auto width = tagItemObj.HasMember("width") ? tagItemObj["width"].GetUint() : 1;
+                auto defaultValue = tagItemObj.HasMember("defaultValue") ? tagItemObj["defaultValue"].GetString() : "";
+                auto alignRight = tagItemObj.HasMember("rightAligned") && tagItemObj["rightAligned"].GetBool();
+                auto isViaFixIndicator = tagItemObj.HasMember("isViaFixIndicator") && tagItemObj["isViaFixIndicator"].GetBool();
 
-        std::vector<std::string> targetFixes;
-        for (auto& fix : object["targetFixes"].GetArray()) {
-            targetFixes.push_back(fix.GetString());
-        }
-
-        std::vector<std::string> viaFixes;
-        if (object.HasMember("viaFixes") && object["viaFixes"].IsArray()) {
-            for (auto& fix : object["viaFixes"].GetArray()) {
-                viaFixes.push_back(fix.GetString());
+                tagItems.push_back(std::make_shared<TagItem>(dataSource, defaultValue, width, alignRight, isViaFixIndicator));
             }
+            tagLayouts[layoutId] = tagItems;
         }
+    }
 
-        std::vector<std::string> destinationAirports;
-        if (object.HasMember("destinationAirports") && object["destinationAirports"].IsArray()) {
-            for (auto& destination : object["destinationAirports"].GetArray()) {
-                destinationAirports.push_back(destination.GetString());
+    if (document.HasMember("timelines") && document["timelines"].IsObject()) {
+        for (auto property = document["timelines"].MemberBegin(); property != document["timelines"].MemberEnd(); ++property) {
+            auto object = property->value.GetObjectA();
+
+            std::vector<std::string> targetFixes;
+            for (auto& fix : object["targetFixes"].GetArray()) {
+                targetFixes.push_back(fix.GetString());
             }
-        }
 
-        std::string alias;
-        if (object.HasMember("alias") && object["alias"].IsString()) {
-            alias = object["alias"].GetString();
-        } else {
-            alias = "";
-            for (const auto& piece : targetFixes) alias += piece + "/";
-            alias = alias.substr(0, alias.size() - 1);
-        }
+            std::vector<std::string> viaFixes;
+            if (object.HasMember("viaFixes") && object["viaFixes"].IsArray()) {
+                for (auto& fix : object["viaFixes"].GetArray()) {
+                    viaFixes.push_back(fix.GetString());
+                }
+            }
 
-        uint32_t startHorizon;
-        if (object.HasMember("startHorizon") && object["startHorizon"].IsUint()) {
-            startHorizon = object["startHorizon"].GetUint();
-            amanController->setTimelineHorizon(alias, startHorizon);
-        }
+            std::vector<std::string> destinationAirports;
+            if (object.HasMember("destinationAirports") && object["destinationAirports"].IsArray()) {
+                for (auto& destination : object["destinationAirports"].GetArray()) {
+                    destinationAirports.push_back(destination.GetString());
+                }
+            }
 
-        timelines.push_back(std::make_shared<AmanTimeline>(targetFixes, viaFixes, destinationAirports, alias));
+            std::vector<std::shared_ptr<TagItem>> tagItems;
+            if (object.HasMember("tagLayout") && object["tagLayout"].IsString()) {
+                tagItems = tagLayouts[object["tagLayout"].GetString()];
+            } else {
+                tagItems = {};
+            }
+
+            uint32_t defaultTimeSpan;
+            if (object.HasMember("defaultTimeSpan") && object["defaultTimeSpan"].IsUint()) {
+                defaultTimeSpan = object["defaultTimeSpan"].GetUint();
+            } else {
+                defaultTimeSpan = 30;
+            }
+
+            timelines.push_back(std::make_shared<AmanTimeline>(targetFixes, viaFixes, destinationAirports, tagItems, property->name.GetString(), defaultTimeSpan));
+        }
+    }
+
+    auto makeSureWindowIsOpen = document.HasMember("openAutomatically") ? document["openAutomatically"].GetBool() : true;
+    if (makeSureWindowIsOpen) {
+        this->amanController->openWindow();
+    }
+
+    // If only one timeline, open it automatically:
+    if (timelines.size() == 1) {
+        auto onlyTimelineId = timelines.at(0)->getIdentifier();
+        if (!this->amanController->isTimelineActive(onlyTimelineId)) {
+            this->amanController->toggleTimeline(onlyTimelineId);
+        }
     }
 }
 
@@ -250,8 +292,8 @@ std::shared_ptr<std::vector<std::shared_ptr<AmanTimeline>>> AmanPlugIn::getTimel
 
                 pAircraftList->clear();
                 for each (auto finalFix in fixes) {
-                    auto var = getInboundsForFix(finalFix, viaFixes, timeline->getDestinationAirports());
-                    pAircraftList->insert(pAircraftList->end(), var.begin(), var.end());
+                    auto inbounds = getInboundsForFix(finalFix, viaFixes, timeline->getDestinationAirports());
+                    pAircraftList->insert(pAircraftList->end(), inbounds.begin(), inbounds.end());
                 }
 
                 result->push_back(timeline);

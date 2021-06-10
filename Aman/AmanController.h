@@ -12,8 +12,10 @@ public:
     AmanController(AmanPlugIn* model);
     void modelUpdated();
     void toggleTimeline(const std::string& id);
+    bool isTimelineActive(const std::string& id);
     void reloadProfiles();
-    void setTimelineHorizon(const std::string& id, uint32_t minutes);
+    bool openWindow();
+    bool closeWindow();
 
     ~AmanController();
 

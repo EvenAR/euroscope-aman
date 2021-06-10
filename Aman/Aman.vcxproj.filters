@@ -115,6 +115,9 @@
     <ClInclude Include="MenuBar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="AmanTagItem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Aman.rc">

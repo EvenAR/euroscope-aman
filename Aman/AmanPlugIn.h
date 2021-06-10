@@ -26,6 +26,7 @@ private:
     std::string pluginDirectory;
 
     virtual void OnTimer(int Counter);
+    virtual bool OnCompileCommand(const char* sCommandLine);
 
     bool hasCorrectDestination(CFlightPlanData fpd, std::vector<std::string> destinationAirports);
     int getFixIndexByName(CFlightPlanExtractedRoute extractedRoute, const std::string& fixName);

@@ -210,6 +210,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\..\..\Program Files (x86)\EuroScope\PlugInEnvironment\EuroScopePlugIn.h" />
+    <ClInclude Include="AmanTagItem.h" />
     <ClInclude Include="EventEmitter.h" />
     <ClInclude Include="Aman.h" />
     <ClInclude Include="AmanAircraft.h" />

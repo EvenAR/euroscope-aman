@@ -4,10 +4,19 @@
 #include <string>
 
 class AmanAircraft;
+class TagItem;
 
 class AmanTimeline {
 public:
-    AmanTimeline(std::vector<std::string> fixes, std::vector<std::string> viaFixes, std::vector<std::string> destinationAirports, const std::string& alias);
+    AmanTimeline(
+        std::vector<std::string> fixes, 
+        std::vector<std::string> viaFixes, 
+        std::vector<std::string> destinationAirports, 
+        std::vector<std::shared_ptr<TagItem>> tagItems,
+        const std::string& alias,
+        uint32_t defaultTimeSpan
+    );
+
     std::string getIdentifier();
     bool isDual();
     bool containsListForFix(std::string fixName);
@@ -17,6 +26,9 @@ public:
     std::vector<std::string> getFixes() { return fixes; }
     std::vector<std::string> getViaFixes() { return viaFixes; }
     std::vector<std::string> getDestinationAirports() { return destinationAirports; }
+    std::vector<std::shared_ptr<TagItem>> getTagItems() { return tagItems; }
+    uint32_t getWidth() { return width; }
+    uint32_t getDefaultTimeSpan() { return defaultTimeSpan; }
 
     ~AmanTimeline();
 
@@ -26,5 +38,8 @@ private:
     std::vector<std::string> viaFixes;
     std::vector<std::string> fixes;
     std::vector<std::string> destinationAirports;
+    std::vector<std::shared_ptr<TagItem>> tagItems;
+    uint32_t width;
+    uint32_t defaultTimeSpan;
 };
 

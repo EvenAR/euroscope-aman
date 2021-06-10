@@ -25,8 +25,6 @@ public:
 
     void update(timelineCollection timelines);
 
-    void setTimelineHorizon(const std::string& id, uint32_t minutes);
-
 private:
     AmanController* controller;
     std::shared_ptr<TitleBar> titleBar;
@@ -56,7 +54,8 @@ private:
     void mouseReleased(CPoint cursorPosClient) override;
     void mouseMoved(CPoint cursorPosClient, CPoint cursorPosScreen) override;
     void mouseWheelSrolled(CPoint cursorPosClient, short delta) override;
+    void closeRequested() override;
     void windowClosed() override;
     void drawContent(HDC hdc, CRect clientRect) override;
-    uint32_t getZoomLevel(const std::string& id);
+    uint32_t getZoomLevel(const std::shared_ptr<AmanTimeline>& timeline);
 };

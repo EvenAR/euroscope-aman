@@ -1,11 +1,29 @@
 {
-    "timelines": [
-        {
-            "alias": "19R/19L",
+    "openAutomatically": false,
+    "timelines": {
+        "19R/19L": {
             "targetFixes": [ "GSW40", "GME40" ],
-            "viaFixes": [ "ADOPI", "LUNIP", "ESEBA", "INREX", "BELGU", "RIPAM" ],
-            "startHorizon": 10,
-            "destinationAirports": [ "ENGM" ]
+            "viaFixes": [ "ADOPI", "LUNIP", "ESEBA", "INREX", "RIPAM", "BELGU" ],
+            "tagLayout": "myLayout"
         }
-    ]
+    },
+    "tagLayouts": {
+        "myLayout": [
+            { "source": "assignedRunway", "width": 4 },
+            { "source": "callsign", "width": 8 },
+            { "source": "static", "defaultValue": "*", "width": 2, "isViaFixIndicator": true },
+            { "source": "aircraftType", "width": 5 },
+            { "source": "aircraftWtc", "width": 2 },
+            { "source": "timeBehindPreceeding", "width": 5, "rightAligned": true },
+            { "source": "remainingDistance", "width": 4, "rightAligned": true },
+            { "source": "static", "width": 1 },
+            { "source": "directRouting", "width": 5, "rightAligned": true, "defaultValue": "-----" },
+            { "source": "static", "width": 1 },
+            { "source": "scratchPad", "width": 4 }
+        ],
+        "simpleLayout": [
+            { "source": "assignedRunway", "width": 4, "isViaFixIndicator": true },
+            { "source": "callsign", "width": 8 }
+        ]
+    }
 }
