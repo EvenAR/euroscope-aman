@@ -127,9 +127,9 @@ CRect AmanTimelineView::render(HDC hdc, std::shared_ptr<AmanTimeline> timeline, 
             *timeline->getAircraftList(), timeline->getTagItems());
     }
 
-    // Draw the fix id
+    // Draw the timeline identifier
     COLORREF oldBackgroundColor = SetBkColor(hdc, AMAN_COLOR_FIX_BACKGROUND);
-    SetBkMode(hdc, OPAQUE);
+    int oldBkMode = SetBkMode(hdc, OPAQUE);
     SetTextColor(hdc, AMAN_COLOR_FIX_TEXT);
     SelectObject(hdc, AMAN_FIX_FONT);
     CRect rect = { timelineStartX - AMAN_RULER_WITDH, myTotalArea.bottom - 20,
@@ -161,7 +161,7 @@ void AmanTimelineView::drawAircraftChain(HDC hdc, int timeNow, int xStart, int y
 
     for (int ac = 0; ac < aircraftList.size(); ac++) {
         AmanAircraft aircraft = aircraftList.at(ac);
-        int acPosY = yStart - (aircraft.eta - timeNow) * pixelsPerSec;
+        int acPosY = yStart - (aircraft.targetFixEta - timeNow) * pixelsPerSec;
 
         COLORREF defaultColor = aircraft.trackedByMe ? AMAN_COLOR_TRACKED : AMAN_COLOR_UNTRACKED;
         HBRUSH brush = aircraft.trackedByMe ? AMAN_TRACKED_BRUSH : AMAN_UNTRACKED_BRUSH;
@@ -249,24 +249,26 @@ CRect AmanTimelineView::drawMultiColorText(HDC hdc, CPoint pt, std::vector<TextS
 }
 
 void AmanTimelineView::drawViafixColorLegend(HDC hdc, std::shared_ptr<AmanTimeline> timeline, CPoint position) {
-    if (!timeline->getViaFixes().empty()) {
-        SelectObject(hdc, AMAN_LEGEND_FONT);
-        CRect startRect;
-        startRect.MoveToXY(position);
+    SelectObject(hdc, AMAN_LEGEND_FONT);
 
+    if (!timeline->getViaFixes().empty()) {
+        std::vector<TextSegment> textSegments;
         for (int i = 0; i < timeline->getViaFixes().size(); i++) {
-            auto viafix = "  " + timeline->getViaFixes().at(i) + " ";
-            DrawText(hdc, viafix.c_str(), viafix.length(), &startRect, DT_LEFT | DT_CALCRECT);
-            DrawText(hdc, viafix.c_str(), viafix.length(), &startRect, DT_LEFT);
-            SelectObject(hdc, VIA_FIX_PENS[i]);
-            MoveToEx(hdc, startRect.left + 5, startRect.top + 3, NULL);
-            LineTo(hdc, startRect.left + 5, startRect.bottom - 5);
-            startRect.MoveToY(startRect.bottom);
+            textSegments.push_back({5, false, VIA_FIX_COLORS[i], timeline->getViaFixes().at(i) });
         }
+        drawMultiColorText(hdc, position, textSegments, true);
     }
 }
 
-std::string AmanTimelineView::formatTime(uint32_t totalSeconds, bool minutesOnly = false) {
+std::string AmanTimelineView::formatTimestamp(uint32_t unixTime, const char* format) {
+    std::time_t temp = unixTime;
+    std::tm* t = std::gmtime(&temp);
+    static std::stringstream ss;
+    ss << std::put_time(t, format);
+    return ss.str();
+}
+
+std::string AmanTimelineView::formatMinutes(uint32_t totalSeconds, bool minutesOnly = false) {
     if (minutesOnly) {
         int minutesRounded = round((float)totalSeconds / 60.0f);
         return std::to_string(minutesRounded);
@@ -294,11 +296,13 @@ std::vector<AmanTimelineView::TextSegment> AmanTimelineView::generateLabel(AmanA
 
         if (sourceId == "callsign") displayValue = aircraft.callsign;
         else if (sourceId == "assignedRunway") displayValue = aircraft.arrivalRunway;
+        else if (sourceId == "assignedStar") displayValue = aircraft.assignedStar;
         else if (sourceId == "aircraftType") displayValue = aircraft.icaoType;
         else if (sourceId == "aircraftWtc") displayValue = { aircraft.wtc };
-        else if (sourceId == "minutesBehindPreceedingRounded") displayValue = timeRelevant ? formatTime(aircraft.secondsBehindPreceeding, true) : "";
-        else if (sourceId == "timeBehindPreceeding") displayValue = timeRelevant ? formatTime(aircraft.secondsBehindPreceeding) : "";
+        else if (sourceId == "minutesBehindPreceedingRounded") displayValue = timeRelevant ? formatMinutes(aircraft.secondsBehindPreceeding, true) : "";
+        else if (sourceId == "timeBehindPreceeding") displayValue = timeRelevant ? formatMinutes(aircraft.secondsBehindPreceeding) : "";
         else if (sourceId == "remainingDistance") displayValue = std::to_string(remainingDistance);
+        else if (sourceId == "estimatedLandingTime") displayValue = formatTimestamp(aircraft.destinationEta, "%H:%M");
         else if (sourceId == "directRouting") displayValue = aircraft.nextFix.size() > 0 ? aircraft.nextFix : tagItem->getDefaultValue();
         else if (sourceId == "scratchPad") displayValue = aircraft.scratchPad;
         else if (sourceId == "static") displayValue = tagItem->getDefaultValue();

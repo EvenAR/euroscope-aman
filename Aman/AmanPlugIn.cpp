@@ -69,16 +69,18 @@ std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixNa
 
         int targetFixIndex = getFixIndexByName(route, fixName);
 
-        if (targetFixIndex != -1 && // Target fix found
+        if (targetFixIndex > -1 && // Target fix found
             route.GetPointDistanceInMinutes(targetFixIndex) > -1 && // Target fix has not been passed
             hasCorrectDestination(rt.GetCorrelatedFlightPlan().GetFlightPlanData(), destinationAirports)) { // Aircraft going to the correct destination
-            bool fixIsDestination = targetFixIndex == route.GetPointsNumber() - 1;
+           
+            bool targetFixIsDestination = targetFixIndex == route.GetPointsNumber() - 1;
             int timeToFix;
 
-            if (fixIsDestination) {
-                float restDistance = predictions.GetPosition(predictions.GetPointsNumber() - 1)
-                    .DistanceTo(route.GetPointPosition(targetFixIndex));
-                timeToFix = (predictions.GetPointsNumber() - 1) * 60 + (restDistance / groundSpeed) * 60.0 * 60.0;
+            float restDistance = predictions.GetPosition(predictions.GetPointsNumber() - 1).DistanceTo(route.GetPointPosition(targetFixIndex));
+            int timeToDestination = (predictions.GetPointsNumber() - 1) * 60 + (restDistance / groundSpeed) * 60.0 * 60.0;
+
+            if (targetFixIsDestination) {
+                timeToFix = timeToDestination;
             } else {
                 // Find the two position prediction points closest to the target point
                 float min1dist = INFINITE;
@@ -106,13 +108,15 @@ std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixNa
                 ac.callsign = rt.GetCallsign();
                 ac.finalFix = fixName;
                 ac.arrivalRunway = rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetArrivalRwy();
+                ac.assignedStar = rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetStarName();
                 ac.icaoType = rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetAircraftFPType();
                 ac.nextFix = rt.GetCorrelatedFlightPlan().GetControllerAssignedData().GetDirectToPointName();
                 ac.viaFixIndex = getFirstViaFixIndex(route, viaFixes);
                 ac.trackedByMe = rt.GetCorrelatedFlightPlan().GetTrackingControllerIsMe();
                 ac.isSelected = isSelectedAircraft;
                 ac.wtc = rt.GetCorrelatedFlightPlan().GetFlightPlanData().GetAircraftWtc();
-                ac.eta = timeNow + timeToFix - rt.GetPosition().GetReceivedTime();
+                ac.targetFixEta = timeNow + timeToFix - rt.GetPosition().GetReceivedTime();
+                ac.destinationEta = timeNow + timeToDestination - rt.GetPosition().GetReceivedTime();
                 ac.distLeft = findRemainingDist(rt, route, targetFixIndex);
                 ac.secondsBehindPreceeding = 0; // Updated in the for-loop below
                 ac.scratchPad = rt.GetCorrelatedFlightPlan().GetControllerAssignedData().GetScratchPadString();
@@ -127,7 +131,7 @@ std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixNa
             auto curr = &aircraftList[i];
             auto next = &aircraftList[i + 1];
 
-            curr->secondsBehindPreceeding = curr->eta - next->eta;
+            curr->secondsBehindPreceeding = curr->targetFixEta - next->targetFixEta;
         }
     }
 

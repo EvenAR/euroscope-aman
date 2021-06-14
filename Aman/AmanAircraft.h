@@ -7,6 +7,7 @@ public:
     std::string callsign;
     std::string finalFix;
     std::string arrivalRunway;
+    std::string assignedStar;
     std::string icaoType;
     std::string nextFix;
     std::string scratchPad;
@@ -16,11 +17,12 @@ public:
     bool trackedByMe;
     bool isSelected;
     char wtc;
-    int eta;
+    uint32_t targetFixEta;
+    uint32_t destinationEta;
     double distLeft;
-    int secondsBehindPreceeding;
+    uint32_t secondsBehindPreceeding;
 
     bool operator< (const AmanAircraft& other) const {
-        return eta < other.eta;
+        return targetFixEta < other.targetFixEta;
     }
 };
