@@ -69,11 +69,28 @@ A tag layout has a set of tag values, which will be drawn in the specified order
 
 | Property            | Description
 |---------------------|---------------
-| `source`            | Where to get the value from. The following sources are available: `callsign`, `assignedRunway`, `aircraftType`, `aircraftWtc`, `minutesBehindPreceedingRounded`, `timeBehindPreceeding`, `remainingDistance`, `directRouting`, `scratchPad`, `static`.
+| `source`            | Where to get the value from (see table below).
 | `width`             | The number of characters that the value should "reserve". If the value is longer than `width` it will be truncated.
 | `rightAligned`      | (optional) Defaults to `false`.
 | `isViaFixIndicator` | (optional) If true, the value will be colored based on the "via fix". Defaults to `false`.
 | `defaultValue`      | (optional) Can only be used if `source` is `directRouting` or `static`. Defaults to `""`.
+
+The following `source`s are available:
+
+| Name                             | Description
+|----------------------------------|---------------
+| `callsign`                       | Aircraft call sign.
+| `assignedRunway`                 | Assigned landing runway.
+| `assignedStar`                   | Assigned STAR.
+| `aircraftType`                   | ICAO aircraft code.
+| `aircraftWtc`                    | Wake turbulence category (L/M/H/S).
+| `minutesBehindPreceedingRounded` | Time behind preceeding aircraft (rounded to nearest minute).
+| `timeBehindPreceeding`           | Time behind preceeding aircraft (mm:ss).
+| `remainingDistance`              | Distance to target fix (nautical miles).
+| `estimatedLandingTime`           | Estimated landing time (hh:mm).
+| `directRouting`                  | Direct routing (if any) given by ATC.
+| `scratchPad`                     | Scratch pad value.
+| `static`                         | A static text, specified in the `defaultValue` property.
 
 ## Available dot-commands
 
@@ -82,7 +99,7 @@ A tag layout has a set of tag values, which will be drawn in the specified order
 | `.aman open`        | Opens the window 
 | `.aman close`       | Closes the window
 
-![Window](https://i.gyazo.com/52cf2fbc1d6eb48f4a77b71784e7c61f.png)
+![Window](https://i.gyazo.com/abd832a844331f03635ee72e5562ee13.png)
 
 Search tags:
 > Vatsim, air traffic control, ATC, flight simulator
