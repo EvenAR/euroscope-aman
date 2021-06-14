@@ -28,7 +28,7 @@
         str.pop_back();
 #define DISPLAY_WARNING(str) DisplayUserMessage("Aman", "Warning", str, true, true, true, true, false);
 
-AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE, "Arrival Manager", "3.0.1", "https://git.io/Jt3S8", "Open source") {
+AmanPlugIn::AmanPlugIn() : CPlugIn(COMPATIBILITY_CODE, "Arrival Manager", "3.1.0", "https://git.io/Jt3S8", "Open source") {
     // Find directory of this .dll
     char fullPluginPath[_MAX_PATH];
     GetModuleFileNameA((HINSTANCE)&__ImageBase, fullPluginPath, sizeof(fullPluginPath));
