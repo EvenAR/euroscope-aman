@@ -263,7 +263,7 @@ void AmanTimelineView::drawViafixColorLegend(HDC hdc, std::shared_ptr<AmanTimeli
 std::string AmanTimelineView::formatTimestamp(uint32_t unixTime, const char* format) {
     std::time_t temp = unixTime;
     std::tm* t = std::gmtime(&temp);
-    static std::stringstream ss;
+    std::stringstream ss;
     ss << std::put_time(t, format);
     return ss.str();
 }
