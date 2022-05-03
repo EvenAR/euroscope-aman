@@ -26,4 +26,5 @@ private:
     static std::vector<TextSegment> generateLabel(AmanAircraft aircraft, std::vector<std::shared_ptr<TagItem>> tagItems, COLORREF defaultColor);
     static std::string formatMinutes(uint32_t totalSeconds, bool minutesOnly);
     static std::string formatTimestamp(uint32_t unixTime, const char* format);
+    static std::string formatAltitude(int altitude, int flightLevel, bool isAboveTransitionAltitude);
 };

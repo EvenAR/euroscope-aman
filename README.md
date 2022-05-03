@@ -89,6 +89,9 @@ The following `source`s are available:
 | `remainingDistance`              | Distance to target fix (nautical miles).
 | `estimatedLandingTime`           | Estimated landing time (hh:mm).
 | `directRouting`                  | Direct routing (if any) given by ATC.
+| `groundSpeed`                    | Calculated ground speed.
+| `groundSpeed10`                  | Calculated ground speed (in tens).
+| `altitude`                       | Altitude (pressure altitude or FL).
 | `scratchPad`                     | Scratch pad value.
 | `static`                         | A static text, specified in the `defaultValue` property.
 

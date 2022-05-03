@@ -20,7 +20,7 @@ AmanWindow::AmanWindow(AmanController* controller) : Window("AmanWindow", "AMAN"
     this->titleBar = std::make_shared<TitleBar>();
     this->menuBar = std::make_shared<MenuBar>();
 
-    static auto onSelection = [controller, this](const std::string& timelineId) {
+    static auto onMenuSelection = [controller, this](const std::string& timelineId) {
         if (timelineId == TIMELINES_RELOAD) {
             controller->reloadProfiles();
             this->zoomLevels.clear();
@@ -29,7 +29,7 @@ AmanWindow::AmanWindow(AmanController* controller) : Window("AmanWindow", "AMAN"
         }
     };
     
-    this->popupMenu = std::make_shared<PopupMenu>("Menu", std::vector<std::string>(), onSelection);
+    this->popupMenu = std::make_shared<PopupMenu>("Menu", std::vector<std::string>(), onMenuSelection);
     this->menuBar->addPopupMenu(popupMenu);
 
     this->titleBar->on("COLLAPSE_CLICKED", [&]() {
@@ -40,7 +40,9 @@ AmanWindow::AmanWindow(AmanController* controller) : Window("AmanWindow", "AMAN"
         }
     });
 
-    this->titleBar->on("MOUSE_PRESSED", [&]() { this->moveWindow = true; });
+    this->titleBar->on("MOUSE_PRESSED", [&]() { 
+        this->moveWindow = true; 
+    });
 
     this->titleBar->on("RESIZE_PRESSED", [&]() {
         if (this->isExpanded()) {
