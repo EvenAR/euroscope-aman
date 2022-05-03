@@ -15,12 +15,17 @@ public:
     int viaFixIndex;
 
     bool trackedByMe;
+    bool isAboveTransAlt;
     bool isSelected;
     char wtc;
     uint32_t targetFixEta;
     uint32_t destinationEta;
     double distLeft;
     uint32_t secondsBehindPreceeding;
+
+    int groundSpeed;
+    int pressureAltitude;
+    int flightLevel;
 
     bool operator< (const AmanAircraft& other) const {
         return targetFixEta < other.targetFixEta;

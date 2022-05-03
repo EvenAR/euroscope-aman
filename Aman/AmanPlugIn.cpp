@@ -53,6 +53,7 @@ std::set<std::string> AmanPlugIn::getAvailableIds() {
 
 std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixName, std::vector<std::string> viaFixes, std::vector<std::string> destinationAirports) {
     long int timeNow = static_cast<long int>(std::time(nullptr)); // Current UNIX-timestamp in seconds
+    int transAlt = this->GetTransitionAltitude();
 
     CRadarTarget asel = RadarTargetSelectASEL();
     CRadarTarget rt;
@@ -120,6 +121,10 @@ std::vector<AmanAircraft> AmanPlugIn::getInboundsForFix(const std::string& fixNa
                 ac.distLeft = findRemainingDist(rt, route, targetFixIndex);
                 ac.secondsBehindPreceeding = 0; // Updated in the for-loop below
                 ac.scratchPad = rt.GetCorrelatedFlightPlan().GetControllerAssignedData().GetScratchPadString();
+                ac.groundSpeed = rt.GetPosition().GetReportedGS();
+                ac.pressureAltitude = rt.GetPosition().GetPressureAltitude();
+                ac.flightLevel = rt.GetPosition().GetFlightLevel();
+                ac.isAboveTransAlt = ac.pressureAltitude > transAlt;
                 aircraftList.push_back(ac);
             }
         }

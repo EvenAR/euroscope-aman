@@ -282,6 +282,24 @@ std::string AmanTimelineView::formatMinutes(uint32_t totalSeconds, bool minutesO
     }
 }
 
+std::string AmanTimelineView::formatAltitude(int altitude, int flightLevel, bool isAboveTransAlt) {
+    int correctAltitude;
+    std::stringstream ss;
+
+    if (isAboveTransAlt) {
+        correctAltitude = flightLevel;
+    } else {
+        ss << 'A';
+        correctAltitude = altitude;
+    }
+
+    ss << std::setfill('0') << std::setw(3) << std::to_string((int)round((float)correctAltitude / 100.0f));
+    
+    std::string output = ss.str();
+
+    return output;
+}
+
 std::vector<AmanTimelineView::TextSegment> AmanTimelineView::generateLabel(AmanAircraft aircraft, std::vector<std::shared_ptr<TagItem>> tagItems, COLORREF defaultColor) {
     int remainingDistance = round(aircraft.distLeft);
 
@@ -304,6 +322,9 @@ std::vector<AmanTimelineView::TextSegment> AmanTimelineView::generateLabel(AmanA
         else if (sourceId == "remainingDistance") displayValue = std::to_string(remainingDistance);
         else if (sourceId == "estimatedLandingTime") displayValue = formatTimestamp(aircraft.destinationEta, "%H:%M");
         else if (sourceId == "directRouting") displayValue = aircraft.nextFix.size() > 0 ? aircraft.nextFix : tagItem->getDefaultValue();
+        else if (sourceId == "groundSpeed") displayValue = std::to_string(aircraft.groundSpeed);
+        else if (sourceId == "groundSpeed10") displayValue = std::to_string((int)round((float)aircraft.groundSpeed / 10.0f));
+        else if (sourceId == "altitude") displayValue = formatAltitude(aircraft.pressureAltitude, aircraft.flightLevel, aircraft.isAboveTransAlt);
         else if (sourceId == "scratchPad") displayValue = aircraft.scratchPad;
         else if (sourceId == "static") displayValue = tagItem->getDefaultValue();
         else displayValue = "?";
