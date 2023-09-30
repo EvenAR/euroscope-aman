@@ -102,8 +102,10 @@ The following `source`s are available:
 | `.aman open`        | Opens the window 
 | `.aman close`       | Closes the window
 
+## Building the project
+
+Microsoft Visual Studio Community can be used to build and debug the plugin. Note that it must be compiled as x86 (32 bit) which is the architecture EuroScope is based on.
+
+## Screenshot
+
 ![Window](https://i.gyazo.com/abd832a844331f03635ee72e5562ee13.png)
-
-# Build
-
-Microsoft Visual Studio Community can be used to build or debug the plugin. Note that it must be compiled as x86 (32 bit) which is the architecture EuroScope is based on.
