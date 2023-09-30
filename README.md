@@ -5,7 +5,7 @@ A simple arrival manager plugin for EuroScope. Uses the position predictions pro
 
 The plugin .dll-file can be found under [Releases](https://github.com/EvenAR/euroscope-aman/releases). The AMAN-display will appear in a separate window once the plugin has been loaded.
 
-## Configuration
+## Plugin configuration
 
 Timelines are loaded from `aman-config.json` which must be placed in the same directory as the plugin `dll`. The file content can be reloaded at run time through the menu. 
 
@@ -104,5 +104,6 @@ The following `source`s are available:
 
 ![Window](https://i.gyazo.com/abd832a844331f03635ee72e5562ee13.png)
 
-Search tags:
-> Vatsim, air traffic control, ATC, flight simulator
+# Build
+
+Microsoft Visual Studio Community can be used to build or debug the plugin. Note that it must be compiled as x86 (32 bit) which is the architecture EuroScope is based on.
