@@ -1,3 +1,8 @@
+> [!WARNING]
+>
+> This repository is no longer maintained.
+> Consider using the newer **aman-dman**: https://github.com/EvenAR/aman-dman
+
 # Arrival manager for EuroScope 
 A simple arrival manager plugin for EuroScope. Uses the position predictions provided by EuroScope to visualize the arrival flow for a given airport or waypoint.
 
